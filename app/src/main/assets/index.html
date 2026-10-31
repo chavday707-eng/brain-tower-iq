@@ -555,6 +555,55 @@ body { font-family: var(--font-body); }
 .gl { width: 36px; height: 36px; margin: -18px 0 0 -18px; font-size: 30px; line-height: 36px; }
 .numfield { aspect-ratio: 1 / .86; }
 
+
+/* ---- v8: बुद्धि टीचर ---- */
+.tb svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tb .tm-h, .tb .tm-s { display: none; }
+.tb[data-mood="happy"] .tm-h { display: inline; }
+.tb[data-mood="happy"] .tm-n, .tb[data-mood="happy"] .tm-c { display: none; }
+.tb[data-mood="sad"] .tm-s { display: inline; }
+.tb[data-mood="sad"] .tm-c { display: none; }
+.tb.talk svg { animation: tbtalk .45s ease-in-out infinite alternate; }
+@keyframes tbtalk { to { transform: translateY(-3px) rotate(-2deg); } }
+.bot .tb { width: 100%; }
+.portrait .tb { width: 88%; }
+.pcard .bot .tb { width: 100%; }
+.hbub { position: relative; width: min(88vw, 340px); background: #fff; border: 3px solid #8A4B1E; border-radius: 16px; padding: 8px 12px; text-align: center; color: var(--ink, #1B1B2F); box-shadow: 0 4px 0 rgba(0, 0, 0, .18); }
+.hbub::before { content: ''; position: absolute; left: 50%; top: -11px; width: 16px; height: 16px; background: #fff; border-left: 3px solid #8A4B1E; border-top: 3px solid #8A4B1E; transform: translateX(-50%) rotate(45deg); }
+.hbub p { margin: 0; font-weight: 700; font-size: 15px; line-height: 1.3; max-height: 5.2em; overflow: auto; }
+.hbub p:empty { display: none; }
+.tbar { display: flex; align-items: center; gap: 8px; margin: 2px 0 4px; }
+.tbub { flex: 1; min-width: 0; position: relative; background: #fff; border: 3px solid #8A4B1E; border-radius: 14px; padding: 6px 10px; box-shadow: 0 3px 0 rgba(0, 0, 0, .15); }
+.tbub p { margin: 0; font-weight: 700; font-size: 15px; line-height: 1.3; color: var(--ink, #1B1B2F); }
+.tbub p:empty::before { content: 'मैं यहीं हूँ, पूछो!'; color: var(--muted, #6b6f8d); }
+.tbtn { display: flex; gap: 6px; }
+.tbtn button { width: 40px; height: 40px; border-radius: 50%; border: 3px solid #8A4B1E; background: #FFF3C4; font-size: 18px; line-height: 1; padding: 0; box-shadow: 0 3px 0 rgba(0, 0, 0, .2); }
+.tbtn button:active { transform: translateY(2px); box-shadow: none; }
+.tbtn button.on { background: #FF7B6B; animation: micpulse .8s ease-in-out infinite alternate; }
+@keyframes micpulse { to { transform: scale(1.12); } }
+.tbtn button[hidden] { display: none; }
+.moods { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
+.moods[hidden] { display: none; }
+#pmoods { margin: 0 0 6px; }
+.mchip { display: inline-flex; align-items: center; gap: 4px; border: 2px solid #8A4B1E; background: #FFF3C4; border-radius: 999px; padding: 4px 10px 4px 6px; font-weight: 700; font-size: 13px; color: var(--ink, #1B1B2F); box-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+.mchip i { font-style: normal; font-size: 20px; line-height: 1; }
+.mchip:active { transform: translateY(1px); }
+.act.nudge, #btnHint.nudge { animation: nudge 1s ease-in-out infinite; }
+@keyframes nudge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14); filter: brightness(1.12); } }
+.tline { margin: 0; padding: 6px 10px; background: #FFF3C4; border: 2px solid #E6B84A; border-radius: 12px; font-weight: 800; font-size: 16px; line-height: 1.35; color: var(--ink, #1B1B2F); }
+.tline:empty { display: none; }
+.ncard { padding-top: 34px; }
+.ncard .tb { width: 110px; margin: 4px auto 0; }
+.ncard .nin { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 12px 14px; border: 3px solid #8A4B1E; border-radius: 14px; background: #fff; font: inherit; font-weight: 800; font-size: 22px; text-align: center; color: var(--ink, #1B1B2F); }
+.ncard .nin:focus { outline: 3px solid #FFB300; }
+@media (prefers-reduced-motion: reduce) { .tb.talk svg, .tbtn button.on, #btnHint.nudge { animation: none !important; } }
+.home { gap: 10px; }
+.frame { width: min(58vw, 230px); }
+.hbub { padding: 6px 10px; }
+.mchip { font-size: 12.5px; padding: 3px 9px 3px 5px; }
+.mchip i { font-size: 18px; }
+@media (max-height: 640px) { .frame { width: min(46vw, 180px); } .logo { margin: 0; } }
+
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -614,9 +663,10 @@ body { font-family: var(--font-body); }
     </div>
     <h1 class="logo">Brain Tower <span>IQ</span></h1>
     <div class="frame">
-      <div class="portrait"><svg viewBox="0 0 120 130"><use href="#i-bot"/></svg></div>
+      <div class="portrait"><div class="tb" data-teacher></div></div>
       <div class="rankbar"><small id="rankLv">स्तर 1</small><b id="rankName">विद्यार्थी</b></div>
     </div>
+    <div class="hbub"><p id="hsay"></p><div class="moods" id="hmoods" data-moods hidden></div></div>
     <p class="upg" id="upg"></p>
     <div class="hbtns">
       <button class="round" id="btnTasks" type="button" aria-label="सारे लेवल"><svg><use href="#i-clip"/></svg></button>
@@ -628,7 +678,7 @@ body { font-family: var(--font-body); }
   <main class="play" id="screenPlay" hidden>
     <div class="par" id="par"><i id="parfill"></i><span id="parlbl"></span></div>
     <div class="mission">
-      <div class="bot" id="bot"><svg viewBox="0 0 120 130"><use href="#i-bot"/></svg></div>
+      <div class="bot" id="bot"><div class="tb" data-teacher></div></div>
       <div class="brief">
         <div class="top"><span class="tag" id="tag"></span><span class="kind" id="kind"></span></div>
         <h2 id="title"></h2>
@@ -636,6 +686,8 @@ body { font-family: var(--font-body); }
         <p class="say" id="say" hidden></p>
       </div>
     </div>
+    <div class="tbar" id="tbar"><div class="tbub"><p id="tsay"></p></div><div class="tbtn"><button id="tSpeak" type="button" aria-label="फिर से सुनो">🔊</button><button id="tMic" type="button" aria-label="बोलकर जवाब दो" hidden>🎤</button><button id="tMoodBtn" type="button" aria-label="मुझे कैसा लग रहा है">🙂</button></div></div>
+    <div class="moods" id="pmoods" data-moods hidden></div>
     <div class="hintbox" id="hintbox" hidden><svg><use href="#i-bulb"/></svg><span id="hinttext"></span></div>
     <div class="stage" id="stage"></div>
     <div class="acts">
@@ -652,12 +704,13 @@ body { font-family: var(--font-body); }
 
   <div class="pop" id="pop" hidden>
     <div class="pcard" role="dialog" aria-live="polite">
-      <div class="bot"><svg viewBox="0 0 120 130"><use href="#i-bot"/></svg></div>
+      <div class="bot"><div class="tb" data-teacher></div></div>
       <h2 id="popTitle">मिशन पूरा!</h2>
       <div class="pedestal">
         <div class="pstars" id="popStars"></div>
         <p class="time" id="popTime"></p>
         <p class="gain" id="popGain"><svg><use href="#i-bulb"/></svg><span id="popGainTxt"></span></p>
+        <p class="tline" id="popT"></p>
         <p class="fact" id="popFact"></p>
         <button class="gobtn" id="popNext" type="button">आगे बढ़ो</button>
       </div>
@@ -677,9 +730,22 @@ body { font-family: var(--font-body); }
     <div class="dcard" role="dialog">
       <div class="dtitle">सेटिंग</div>
       <p class="sinfo">Brain Tower IQ · 6 मंज़िलें, सीखने और सोचने वाली पहेलियाँ। तुम्हारी प्रगति इसी फ़ोन में सेव रहती है।</p>
+      <button class="gobtn" id="sVoice" type="button">टीचर की आवाज़: चालू</button>
+      <button class="gobtn" id="sName" type="button">नाम बदलो</button>
       <button class="gobtn" id="sSound" type="button">आवाज़: चालू</button>
       <button class="gobtn red" id="sReset" type="button">नए सिरे से शुरू करो</button>
       <button class="dclose" id="sClose" type="button">बंद करो</button>
+    </div>
+  </div>
+
+  <div class="pop dim" id="npop" hidden>
+    <div class="dcard ncard" role="dialog">
+      <div class="dtitle">नमस्ते!</div>
+      <div class="tb" data-teacher></div>
+      <p class="sinfo">मैं बुद्धि टीचर हूँ। तुम्हारा नाम क्या है?</p>
+      <input class="nin" id="nIn" type="text" maxlength="14" autocomplete="off" placeholder="अपना नाम लिखो" aria-label="तुम्हारा नाम">
+      <button class="gobtn" id="nGo" type="button">शुरू करो</button>
+      <button class="dclose" id="nClose" type="button" hidden>बंद करो</button>
     </div>
   </div>
 
@@ -930,7 +996,7 @@ body { font-family: var(--font-body); }
   });
 
   var KEY = 'dd-tower-v7';
-  var S = { bulbs: 5, stars: {}, open: 1, cur: 1, daily: { n: 0, last: '' }, sound: true };
+  var S = { bulbs: 5, stars: {}, open: 1, cur: 1, daily: { n: 0, last: '' }, sound: true, name: '', tv: true };
   var R = { screen: 'home', lensFn: null, hint: false, mist: 0, next: 0, locked: false, val: '', sel: [], opened: [], busy: false, matched: 0, miss: 0, run: 0, seq: [], exp: [], pos: 0, accept: false, t0: 0, par: 30 };
 
   function $(id) { return document.getElementById(id); }
@@ -942,6 +1008,8 @@ body { font-family: var(--font-body); }
         S.open = Math.min(Math.max(j.open || 1, 1), L.length);
         if (j.daily && typeof j.daily === 'object') S.daily = { n: Math.min(Math.max(j.daily.n | 0, 0), 7), last: String(j.daily.last || '') };
         if (typeof j.sound === 'boolean') S.sound = j.sound;
+        if (typeof j.name === 'string') S.name = j.name.replace(/[<>&"]/g, '').slice(0, 14);
+        if (typeof j.tv === 'boolean') S.tv = j.tv;
       }
     } catch (e) { /* pehli vaar */ }
   }
@@ -972,6 +1040,7 @@ body { font-family: var(--font-body); }
     R.mist++; snd('bad'); buzz(35);
     say(pick(['गड़बड़! फिर से कोशिश करो।', 'लगभग! एक बार और सोचो।', 'सिग्नल ग़लत। दोबारा देखो।']));
     bot('nope');
+    tWrong();
   }
 
   function screen(name) {
@@ -1103,6 +1172,7 @@ body { font-family: var(--font-body); }
     else drawNumber(lv, st);
     hud();
     if (lv.type === 'simon') startTimerAfterShow(lv); else startTimer(lv);
+    tQuestion(lv, n);
   }
   /* simon ma pehla dikhava, pachhi samay chalu */
   function startTimerAfterShow(lv) { stopTimer(); R.par = parOf(lv); R.t0 = Date.now(); $('parfill').style.width = '100%'; $('parlbl').textContent = '3★ का समय चुनने के बाद शुरू'; $('par').classList.remove('late'); }
@@ -1411,6 +1481,7 @@ body { font-family: var(--font-body); }
     $('popGain').hidden = !gain;
     $('popGainTxt').textContent = '+' + gain + ' बल्ब';
     $('popFact').textContent = lv.fact || '';
+    tWin(el, st);
     $('popNext').textContent = n >= L.length ? 'टावर देखो' : 'अगला मिशन';
     $('pop').hidden = false;
     confetti();
@@ -1425,7 +1496,7 @@ body { font-family: var(--font-body); }
   /* ---------- buttons ---------- */
   $('btnHint').addEventListener('click', function () {
     if (R.locked) return;
-    if (!R.hint) { if (!spend(1)) return; R.hint = true; }
+    if (!R.hint) { if (!spend(1)) return; R.hint = true; tHint(); }
     $('hintbox').hidden = false;
     if (R.lensFn) R.lensFn();
   });
@@ -1434,6 +1505,7 @@ body { font-family: var(--font-body); }
     if (!spend(3)) return;
     S.open = Math.min(Math.max(S.open, S.cur + 1), L.length);
     save();
+    T.pre = pick(['कोई बात नहीं {n}, यह वाला छोड़ देते हैं। अगला सवाल देखो!', 'ठीक है {n}, आगे बढ़ते हैं। तुम बहुत अच्छा कर रहे हो!']);
     if (S.cur >= L.length) showMap(); else startLevel(S.cur + 1);
   });
   $('btnMap').addEventListener('click', function () {
@@ -1968,9 +2040,285 @@ body { font-family: var(--font-body); }
     R.lensFn = function () { toast('पहले ऊपर की पंक्ति ठीक करो, फिर आगे बढ़ो।'); };
   }
 
+  /* ================= v8: बुद्धि टीचर (bolti teacher, naam ane bhavna) ================= */
+  var SYN = window.speechSynthesis || null;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  var T = { voice: null, pre: '', say: '', lastW: -1, idleDone: -1, idle2: -1, lastAct: Date.now(), badLv: 0, streak: 0, pending: '', mood: 'ok', seen: false };
+  var TSVG = '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+    '<path d="M22 40 L14 14 L40 30Z" fill="#F5A623" stroke="#8A4B1E" stroke-width="3" stroke-linejoin="round"/>' +
+    '<path d="M78 40 L86 14 L60 30Z" fill="#F5A623" stroke="#8A4B1E" stroke-width="3" stroke-linejoin="round"/>' +
+    '<ellipse cx="50" cy="60" rx="35" ry="33" fill="#F5A623" stroke="#8A4B1E" stroke-width="3"/>' +
+    '<ellipse cx="50" cy="73" rx="21" ry="17" fill="#FFE2A8"/>' +
+    '<path d="M18 27 L50 11 L82 27 L50 40Z" fill="#2B3A67" stroke="#141C3A" stroke-width="3" stroke-linejoin="round"/>' +
+    '<path d="M80 28 L85 46" stroke="#FFD23F" stroke-width="3" stroke-linecap="round"/><circle cx="85" cy="48" r="4" fill="#FFD23F"/>' +
+    '<circle cx="36" cy="52" r="13" fill="#fff" stroke="#5B2F10" stroke-width="3.5"/><circle cx="64" cy="52" r="13" fill="#fff" stroke="#5B2F10" stroke-width="3.5"/>' +
+    '<path d="M49 52 L51 52" stroke="#5B2F10" stroke-width="3.5"/>' +
+    '<g class="tm-n"><circle cx="37" cy="53" r="5.5" fill="#1B1B2F"/><circle cx="63" cy="53" r="5.5" fill="#1B1B2F"/><circle cx="39" cy="51" r="1.8" fill="#fff"/><circle cx="65" cy="51" r="1.8" fill="#fff"/></g>' +
+    '<g class="tm-h"><path d="M28 55 Q36 45 44 55" stroke="#1B1B2F" stroke-width="4.5" fill="none" stroke-linecap="round"/><path d="M56 55 Q64 45 72 55" stroke="#1B1B2F" stroke-width="4.5" fill="none" stroke-linecap="round"/><circle cx="24" cy="66" r="5" fill="#FF8FA3" opacity=".75"/><circle cx="76" cy="66" r="5" fill="#FF8FA3" opacity=".75"/><path d="M41 76 Q50 86 59 76Z" fill="#B33A3A" stroke="#5B2F10" stroke-width="2" stroke-linejoin="round"/></g>' +
+    '<g class="tm-s"><path d="M25 39 L45 45" stroke="#5B2F10" stroke-width="3.5" stroke-linecap="round"/><path d="M75 39 L55 45" stroke="#5B2F10" stroke-width="3.5" stroke-linecap="round"/><path d="M42 80 Q50 73 58 80" stroke="#5B2F10" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M27 66 Q23 73 27 76 Q31 73 27 66Z" fill="#59C3F5"/></g>' +
+    '<path class="tm-c" d="M43 77 Q50 82 57 77" stroke="#5B2F10" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+    '<path d="M44 60 L56 60 L50 70Z" fill="#FF8A00" stroke="#8A4B1E" stroke-width="2.5" stroke-linejoin="round"/>' +
+    '</svg>';
+  var MOODS = [
+    { k: 'happy', e: '😄', t: 'मज़ा आ रहा है' },
+    { k: 'ok', e: '🙂', t: 'ठीक हूँ' },
+    { k: 'hard', e: '😟', t: 'मुश्किल लग रहा है' },
+    { k: 'sad', e: '😢', t: 'मन नहीं लग रहा' },
+    { k: 'tired', e: '😴', t: 'थक गया' }
+  ];
+  var MOOD_REPLY = {
+    happy: ['वाह {n}! तुम्हें मज़ा आ रहा है, तो मुझे भी बहुत खुशी हुई! चलो और मज़ेदार पहेलियाँ खेलें!', 'happy'],
+    ok: ['ठीक है {n}! चलो साथ में खेलते हैं, बहुत मज़ा आएगा।', 'calm'],
+    hard: ['कोई बात नहीं {n}, मुश्किल लगना बिल्कुल ठीक है। मैं हर सवाल में तुम्हारे साथ हूँ, और ज़रूरत हो तो संकेत भी है। छोटे-छोटे कदम चलेंगे!', 'calm'],
+    sad: ['अरे {n}, मन नहीं लग रहा? कोई बात नहीं। मैं तुम्हारे साथ हूँ। चलो एक आसान सवाल से शुरू करते हैं, जीतोगे तो फिर मुस्कुराओगे!', 'sad'],
+    tired: ['थक गए {n}? थोड़ा पानी पी लो और गहरी साँस लो। फिर चाहो तो एक छोटा सवाल खेलें, या बाद में आ जाना। मैं यहीं हूँ।', 'calm']
+  };
+
+  function nm() { return S.name || 'दोस्त'; }
+  function fillN(s) { return String(s).replace(/\{n\}/g, nm()); }
+  function cleanSpeech(s) { return String(s).replace(/[\u{1F000}-\u{1FFFF}☀-➿⭐★☆✓⌫]/gu, ' ').replace(/\s+/g, ' ').trim(); }
+  function pickVoice() {
+    if (!SYN) return;
+    var v = [], i; try { v = SYN.getVoices() || []; } catch (e) { v = []; }
+    T.voice = null;
+    for (i = 0; i < v.length; i++) { if (/^hi[-_]?in$/i.test(v[i].lang || '')) { T.voice = v[i]; return; } }
+    for (i = 0; i < v.length; i++) { if (/^hi/i.test(v[i].lang || '')) { T.voice = v[i]; return; } }
+  }
+  if (SYN) { pickVoice(); try { SYN.addEventListener('voiceschanged', pickVoice); } catch (e) { /* chale */ } }
+  function setTalk(on) { var a = document.querySelectorAll('.tb'); for (var i = 0; i < a.length; i++) a[i].classList.toggle('talk', !!on); }
+  function setMood(m) { var a = document.querySelectorAll('.tb'); for (var i = 0; i < a.length; i++) a[i].dataset.mood = m; }
+  function speak(text) {
+    if (!SYN || !S.tv) return;
+    try {
+      SYN.cancel();
+      var u = new SpeechSynthesisUtterance(cleanSpeech(text));
+      u.lang = 'hi-IN'; if (T.voice) u.voice = T.voice;
+      u.rate = 0.9; u.pitch = 1.2;
+      u.onstart = function () { setTalk(true); };
+      u.onend = u.onerror = function () { setTalk(false); };
+      SYN.speak(u);
+    } catch (e) { /* awaaz na chale to bubble chale */ }
+  }
+  function tsay(text, mood, spoken) {
+    var shown = fillN(text);
+    setMood(mood || 'calm');
+    if ($('tsay')) $('tsay').textContent = shown;
+    if ($('hsay')) $('hsay').textContent = shown;
+    T.pending = '';
+    speak(spoken ? fillN(spoken) : shown);
+    return shown;
+  }
+  function tAct() { T.lastAct = Date.now(); }
+
+  /* sawal puchhva */
+  function optsText(lv) {
+    if (lv.type !== 'choice') return '';
+    var t = lv.opts.map(function (o) { return o.t; }).filter(Boolean);
+    return (t.length === lv.opts.length && t.join('').length < 90) ? ' विकल्प हैं: ' + t.join(', ') + '।' : '';
+  }
+  function tQuestion(lv, n) {
+    var intro;
+    $('btnHint').classList.remove('nudge'); $('pmoods').hidden = true; tAct();
+    if (T.pre) { intro = T.pre; T.pre = ''; }
+    else if (!T.seen) intro = 'चलो {n}, हमारा पहला सवाल! ध्यान से सुनना।';
+    else if (T.lastW !== lv.w) intro = pick(['वाह {n}, नई मंज़िल! चलो देखें यहाँ क्या है।', '{n}, अब नई मंज़िल आ गई। तैयार हो?']);
+    else intro = pick(['{n}, ध्यान से सुनो।', 'ये लो {n}, अगला सवाल।', '{n}, तुम कर सकते हो!', 'चलो {n}, ज़रा सोचो।']);
+    if ((T.mood === 'sad' || T.mood === 'tired' || T.mood === 'hard') && Math.random() < 0.5) intro += ' आराम से, कोई जल्दी नहीं।';
+    T.seen = true; T.lastW = lv.w;
+    var body = (lv.q || lv.title) + optsText(lv);
+    T.say = fillN(intro) + ' ' + body;
+    tsay(intro, 'calm', T.say);
+  }
+
+  /* galat jawab */
+  function tWrong() {
+    tAct();
+    var m = R.mist, msg;
+    if (m >= 5) msg = '{n}, लगता है तुम थोड़े थक गए हो। एक गहरी साँस लो, पानी पी लो। फिर साथ में करेंगे। चाहो तो सवाल छोड़ भी सकते हो।';
+    else if (m >= 3) { msg = '{n}, घबराओ मत! यह सवाल थोड़ा मुश्किल है। चाहो तो बल्ब वाला संकेत ले लो, इसमें कोई शर्म नहीं।'; $('btnHint').classList.add('nudge'); }
+    else if (m === 2) msg = pick(['{n}, तुम बहुत पास हो! धीरे-धीरे सोचो।', 'चिंता मत करो {n}, मैं तुम्हारे साथ हूँ। फिर से देखो।']);
+    else msg = pick(['कोई बात नहीं {n}! गलती करने से ही हम सीखते हैं। फिर से कोशिश करो।', 'अरे {n}, ज़रा सा चूक गए। एक बार और सोचो!']);
+    if ((T.mood === 'sad' || T.mood === 'tired' || T.mood === 'hard') && m < 3) msg += ' आराम से, कोई जल्दी नहीं।';
+    tsay(msg, 'sad');
+  }
+
+  /* sahi jawab */
+  function tWin(el, st) {
+    var msg;
+    T.streak = R.mist === 0 ? T.streak + 1 : 0;
+    T.badLv = R.mist >= 3 ? T.badLv + 1 : 0;
+    if (st === 3 && R.mist === 0) msg = pick(['शाबाश {n}! एकदम सही, बिना एक भी गलती के! तुम तो सच में जीनियस हो!', 'वाह वाह {n}! तीन सितारे! मुझे तुम पर बहुत गर्व है!']);
+    else if (R.mist === 0) msg = pick(['बहुत बढ़िया {n}! सही जवाब!', 'सही पकड़ा {n}! ऐसे ही चलते रहो।']);
+    else if (R.mist < 3) msg = pick(['शाबाश {n}! तुमने दोबारा कोशिश की और सही कर दिया।', 'यह हुई ना बात {n}! गलती से सीखकर जीत गए।']);
+    else msg = pick(['{n}, तुमने हार नहीं मानी और जीत गए! यही असली हिम्मत है। मुझे तुम पर गर्व है!', 'वाह {n}! सवाल मुश्किल था, फिर भी तुमने कर दिखाया!']);
+    if (el < R.par * 0.4 && R.mist === 0) msg += ' और कितनी तेज़ी से किया!';
+    if (T.streak >= 3 && T.streak % 3 === 0) msg += ' लगातार ' + T.streak + ' सवाल बिना गलती के, कमाल!';
+    if (T.mood === 'sad' || T.mood === 'tired' || T.mood === 'hard') { msg += ' देखा {n}, तुम कर सकते हो!'; T.mood = 'ok'; }
+    if (T.badLv >= 2) { T.pre = '{n}, आज तुमने बहुत मेहनत की है। चलो अगला सवाल आराम से करें।'; T.badLv = 0; }
+    $('popT').textContent = fillN(msg);
+    tsay(msg, 'happy');
+  }
+  function tHint() {
+    var lv = L[S.cur - 1];
+    $('btnHint').classList.remove('nudge');
+    tsay('अच्छा सोचा {n}! संकेत लेना समझदारी है। सुनो:', 'happy', '{n}, संकेत सुनो। ' + (lv.hint || ''));
+    $('tsay').textContent = fillN('अच्छा सोचा {n}! संकेत लेना समझदारी है।');
+  }
+
+  /* bhavna */
+  function tMood(k) {
+    var r = MOOD_REPLY[k]; if (!r) return;
+    T.mood = k;
+    tsay(r[0], r[1]);
+    $('pmoods').hidden = true;
+    if ($('hmoods')) $('hmoods').hidden = true;
+  }
+  function buildMoods() {
+    var hosts = document.querySelectorAll('[data-moods]');
+    for (var h = 0; h < hosts.length; h++) {
+      MOODS.forEach(function (m) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'mchip'; b.dataset.m = m.k;
+        b.innerHTML = '<i>' + m.e + '</i><span>' + m.t + '</span>';
+        b.addEventListener('click', function () { tMood(m.k); });
+        hosts[h].appendChild(b);
+      });
+    }
+  }
+
+  /* bolkar jawab */
+  function norm(s) { return String(s).toLowerCase().replace(/[\s।,.?!'"\-]+/g, ''); }
+  var HNUM = { 'शून्य': 0, 'ज़ीरो': 0, 'जीरो': 0, 'zero': 0, 'एक': 1, 'one': 1, 'दो': 2, 'two': 2, 'तीन': 3, 'three': 3, 'चार': 4, 'four': 4, 'पाँच': 5, 'पांच': 5, 'five': 5, 'छह': 6, 'छः': 6, 'six': 6, 'सात': 7, 'seven': 7, 'आठ': 8, 'eight': 8, 'नौ': 9, 'nine': 9, 'दस': 10, 'ten': 10, 'ग्यारह': 11, 'बारह': 12, 'तेरह': 13, 'चौदह': 14, 'पंद्रह': 15, 'सोलह': 16, 'सत्रह': 17, 'अठारह': 18, 'उन्नीस': 19, 'बीस': 20, 'तीस': 30, 'चालीस': 40, 'पचास': 50 };
+  function numFrom(alts) {
+    var i, m, w, k;
+    for (i = 0; i < alts.length; i++) { m = String(alts[i]).match(/\d+/); if (m) return parseInt(m[0], 10); }
+    for (i = 0; i < alts.length; i++) {
+      w = String(alts[i]).toLowerCase().split(/\s+/);
+      for (k = 0; k < w.length; k++) { if (HNUM.hasOwnProperty(w[k])) return HNUM[w[k]]; }
+    }
+    return null;
+  }
+  function matchChoice(lv, alts) {
+    var best = -1, bl = 0, i, j, nt, t;
+    for (j = 0; j < alts.length; j++) {
+      t = norm(alts[j]);
+      for (i = 0; i < lv.opts.length; i++) {
+        nt = lv.opts[i].t ? norm(lv.opts[i].t) : '';
+        if (nt && t.indexOf(nt) >= 0 && nt.length > bl) { best = i; bl = nt.length; }
+      }
+    }
+    if (best >= 0) return best;
+    var all = alts.join(' ').toLowerCase();
+    if (/पहला|पहले|first/.test(all)) return 0;
+    if (/दूसरा|दूसरे|second/.test(all)) return 1;
+    if (/तीसरा|तीसरे|third/.test(all)) return 2;
+    if (/चौथा|चौथे|fourth/.test(all)) return 3;
+    return -1;
+  }
+  var MWORDS = [[/मुश्किल|कठिन|hard|difficult/, 'hard'], [/थक|tired/, 'tired'], [/उदास|रोना|मन नहीं|बोर|boring|sad/, 'sad'], [/मज़ा|मजा|खुश|मस्त|happy|fun/, 'happy']];
+  function hear(alts) {
+    var lv = L[S.cur - 1], i;
+    if (R.screen === 'play' && !R.locked && lv) {
+      if (lv.type === 'choice') {
+        var idx = matchChoice(lv, alts);
+        if (idx >= 0) { var cards = document.querySelectorAll('#stage .choices .card'); if (cards[idx]) { cards[idx].click(); return true; } }
+      } else if (lv.type === 'number') {
+        var nn = numFrom(alts);
+        if (nn !== null) { R.val = String(nn); showNum(); keyPress('✓'); return true; }
+      }
+    }
+    var all = alts.join(' ').toLowerCase();
+    for (i = 0; i < MWORDS.length; i++) { if (MWORDS[i][0].test(all)) { tMood(MWORDS[i][1]); return true; } }
+    tsay('{n}, मैंने सुना: "' + alts[0] + '". इस सवाल का जवाब बोलकर या छूकर दो।', 'calm');
+    return false;
+  }
+  var rec = null;
+  function listen() {
+    if (!SR) return;
+    try {
+      if (SYN) SYN.cancel();
+      rec = new SR(); rec.lang = 'hi-IN'; rec.interimResults = false; rec.maxAlternatives = 3;
+      rec.onresult = function (e) {
+        var a = [], r = e.results[0];
+        for (var i = 0; i < r.length; i++) a.push(r[i].transcript);
+        hear(a);
+      };
+      rec.onerror = function (e) { $('tMic').classList.remove('on'); tsay(e.error === 'not-allowed' ? '{n}, माइक की अनुमति दो, या छूकर जवाब दो।' : '{n}, ठीक से सुन नहीं पाया। फिर से बोलो।', 'calm'); };
+      rec.onend = function () { $('tMic').classList.remove('on'); };
+      $('tMic').classList.add('on');
+      rec.start(); tAct();
+    } catch (e) { $('tMic').classList.remove('on'); }
+  }
+
+  /* naam */
+  function openName(canClose) {
+    $('nIn').value = S.name || '';
+    $('nClose').hidden = !canClose;
+    $('npop').hidden = false;
+    setMood('happy');
+    setTimeout(function () { try { $('nIn').focus({ preventScroll: true }); } catch (e) { /* chale */ } }, 50);
+  }
+  function submitName() {
+    var v = $('nIn').value.replace(/[<>&"]/g, '').replace(/\s+/g, ' ').trim().slice(0, 14);
+    if (!v) { shakeEl($('nIn')); toast('पहले अपना नाम लिखो।'); return; }
+    var first = !S.name;
+    S.name = v; save(); $('npop').hidden = true;
+    if (first) {
+      autoShown = true; showHome();
+      if ($('hmoods')) $('hmoods').hidden = false;
+      tsay('नमस्ते {n}! आज तुम्हारा मन कैसा है?', 'happy', 'नमस्ते {n}! मैं बुद्धि टीचर हूँ। हम साथ में पहेलियाँ सुलझाएँगे। मैं सवाल पूछूँगी, तुम जवाब देना। सही होगा तो मैं तालियाँ बजाऊँगी, और गलत हुआ तो भी चिंता मत करना, मैं तुम्हारे साथ हूँ। बताओ, आज तुम्हारा मन कैसा है?');
+    } else {
+      showHome(); tsay('ठीक है, अब मैं तुम्हें {n} बुलाऊँगी!', 'happy');
+    }
+  }
+  $('nGo').addEventListener('click', submitName);
+  $('nIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitName(); });
+  $('nClose').addEventListener('click', function () { $('npop').hidden = true; });
+  $('sName').addEventListener('click', function () { $('spop').hidden = true; openName(true); });
+  function setVoiceBtn() { $('sVoice').textContent = S.tv ? 'टीचर की आवाज़: चालू' : 'टीचर की आवाज़: बंद'; }
+  $('sVoice').addEventListener('click', function () { S.tv = !S.tv; save(); setVoiceBtn(); if (!S.tv && SYN) { try { SYN.cancel(); } catch (e) { /* chale */ } } else tsay('{n}, मैं फिर से बोलूँगी!', 'happy'); });
+  $('tSpeak').addEventListener('click', function () { tAct(); if (T.say) { setMood('calm'); speak(T.say); } });
+  $('tMic').addEventListener('click', listen);
+  $('tMoodBtn').addEventListener('click', function () { tAct(); $('pmoods').hidden = !$('pmoods').hidden; });
+  $('screenPlay').addEventListener('pointerdown', tAct, true);
+  document.addEventListener('pointerdown', function (e) {
+    if (T.pending && !(e.target.closest && e.target.closest('#btnStart,#btnTasks,.tile,#btnBonus,#btnGear'))) { var p = T.pending; T.pending = ''; speak(p); }
+  });
+
+  /* atki jay to */
+  setInterval(function () {
+    if (R.screen !== 'play' || R.locked || !$('pop').hidden || !$('npop').hidden) return;
+    var idle = (Date.now() - T.lastAct) / 1000;
+    if (idle > 60 && T.idle2 !== R.run) {
+      T.idle2 = R.run; $('pmoods').hidden = false;
+      tsay('{n}, क्या मन नहीं लग रहा? नीचे बताओ कि तुम्हें कैसा लग रहा है।', 'sad');
+    } else if (idle > 25 && T.idleDone !== R.run) {
+      T.idleDone = R.run; $('btnHint').classList.add('nudge');
+      tsay('{n}, सोच रहे हो? आराम से, कोई जल्दी नहीं। अटक जाओ तो बल्ब वाला संकेत ले सकते हो।', 'calm');
+    }
+  }, 2000);
+
+  function initTeacher() {
+    var a = document.querySelectorAll('[data-teacher]');
+    for (var i = 0; i < a.length; i++) a[i].innerHTML = TSVG;
+    setMood('calm');
+    buildMoods();
+    if (SR) $('tMic').hidden = false;
+    setVoiceBtn();
+    R.hear = hear; R.tsay = tsay; R.T = T;
+  }
+
   load();
   S.cur = nextTarget();
-  showHome();
+  initTeacher();
+  if (!S.name) { autoShown = true; showHome(); openName(false); }
+  else {
+    showHome();
+    var hr = new Date().getHours();
+    var hi = hr < 12 ? 'सुप्रभात' : hr < 17 ? 'नमस्ते' : 'शुभ संध्या';
+    var tv0 = S.tv; S.tv = false;
+    var gm = tsay(hi + ' {n}! फिर से स्वागत है। मुझे तुम्हारी याद आ रही थी। चलो, आगे खेलें!', 'happy');
+    S.tv = tv0; T.pending = gm;
+  }
 })();
 </script>
 
