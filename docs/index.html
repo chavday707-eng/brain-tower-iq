@@ -1,0 +1,1978 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0;background:#29B6F6}</style>
+<title>Brain Tower IQ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap">
+<style>
+/* Layout: ek column, dark arcade. Upar HUD ane star-timer, pachhi robot Chip nu mission card, vache puzzle stage, niche dock.
+   Map ek tower chhe: 5 manjil upar-thi-niche (sauthi upar sauthi kathin), darek manjil ma level na chorus tile. */
+:root {
+  --bg: #090C1E;
+  --panel: #151B3F;
+  --panel2: #1D2552;
+  --edge: #2D3878;
+  --ink: #EAF0FF;
+  --muted: #93A0D6;
+  --ol: #0B0E22;
+  --acc: #2EE6D6;
+  --acc-deep: #139E93;
+  --acc-ink: #04141A;
+  --glow: rgba(46, 230, 214, .22);
+  --good: #4BE08A;
+  --good-bg: #0F3A24;
+  --bad: #FF5468;
+  --bad-bg: #44131F;
+  --hint-bg: #3A2E0E;
+  --hint-line: #B8861F;
+  --hint-ink: #FFE7A8;
+  --gold: #FFC83D;
+  --font-body: 'Baloo 2', 'Noto Sans Devanagari', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-num: 'Baloo 2', 'Noto Sans Devanagari', system-ui, sans-serif;
+  color-scheme: dark;
+}
+[data-world="0"] { --acc: #2EE6D6; --acc-deep: #139E93; --glow: rgba(46, 230, 214, .22); }
+[data-world="1"] { --acc: #B6F23A; --acc-deep: #7FAE12; --glow: rgba(182, 242, 58, .20); }
+[data-world="2"] { --acc: #FFB938; --acc-deep: #C98512; --glow: rgba(255, 185, 56, .22); }
+[data-world="3"] { --acc: #FF4FA3; --acc-deep: #C42478; --glow: rgba(255, 79, 163, .24); }
+[data-world="4"] { --acc: #A78BFF; --acc-deep: #6F52D6; --glow: rgba(167, 139, 255, .26); }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 10px 14px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--acc); outline-offset: 3px; }
+.ic { width: 100%; height: 100%; display: block; }
+
+.sky {
+  position: fixed; inset: 0; z-index: -1; background-color: var(--bg);
+  background-image:
+    radial-gradient(90% 46% at 50% -8%, var(--glow), transparent 70%),
+    linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+  background-size: auto, 30px 30px, 30px 30px;
+}
+
+.app {
+  max-width: 460px; margin: 0 auto;
+  min-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+/* ---------- HUD ---------- */
+.hud { display: flex; align-items: center; gap: 8px; }
+.sq {
+  flex: none; width: 44px; height: 44px; display: grid; place-items: center; color: var(--ink);
+  background: var(--panel); border: 2px solid var(--edge); border-radius: 10px;
+}
+.sq svg { width: 22px; height: 22px; }
+.sq:active { border-color: var(--acc); }
+.chip {
+  display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 12px; min-width: 0; white-space: nowrap;
+  background: var(--panel); border: 2px solid var(--edge); border-radius: 10px; font-weight: 700; font-size: 16px;
+}
+.chip b { font-family: var(--font-num); font-weight: 500; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+.chip svg { width: 20px; height: 20px; flex: none; }
+.chip.lv { flex: 1; justify-content: space-between; overflow: hidden; }
+.chip.lv span { overflow: hidden; text-overflow: ellipsis; }
+.chip.st svg { color: var(--gold); }
+
+.par { position: relative; height: 22px; background: var(--panel); border: 2px solid var(--edge); border-radius: 6px; overflow: hidden; }
+.par i { position: absolute; inset: 0 auto 0 0; width: 100%; background: linear-gradient(90deg, var(--acc-deep), var(--acc)); transition: width .25s linear; }
+.par span { position: relative; display: block; text-align: center; font-weight: 700; font-size: 13px; line-height: 18px; letter-spacing: .03em; text-shadow: 0 1px 2px rgba(0, 0, 0, .7); }
+.par.late i { background: var(--edge); }
+
+/* ---------- mission ---------- */
+.play { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.mission { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; align-items: start; }
+.bot { width: 76px; margin-top: 4px; }
+.bot svg { width: 100%; height: auto; display: block; overflow: visible; }
+.bot.hop { animation: hop .6s ease; }
+.bot.nope { animation: shake .4s ease; }
+.brief { background: var(--panel); border: 2px solid var(--edge); border-radius: 12px; padding: 8px 12px 10px; min-width: 0; }
+.brief .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; letter-spacing: .05em; }
+.brief .tag { color: var(--acc-ink); background: var(--acc); padding: 0 8px; border-radius: 4px; line-height: 20px; }
+.brief .kind { color: var(--muted); }
+.brief h2 { margin: 4px 0 0; font-size: 23px; line-height: 1.15; font-weight: 700; text-wrap: balance; }
+.brief p { margin: 4px 0 0; font-size: 18px; line-height: 1.3; font-weight: 600; overflow-wrap: anywhere; }
+.brief .say { color: var(--bad); font-weight: 700; }
+.brief .say.ok { color: var(--good); }
+
+.hintbox {
+  display: flex; gap: 8px; align-items: flex-start; background: var(--hint-bg); color: var(--hint-ink);
+  border: 2px dashed var(--hint-line); border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 17px;
+}
+.hintbox svg { flex: none; width: 22px; height: 22px; margin-top: 1px; }
+.hintbox span { min-width: 0; overflow-wrap: anywhere; }
+
+/* ---------- stage ---------- */
+.stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 2px 0 4px; min-height: 220px; }
+.art { width: 80px; height: 80px; display: grid; place-items: center; }
+.art.txtart { width: auto; min-width: 80px; padding: 0 8px; font-family: var(--font-num); font-weight: 500; font-size: 40px; line-height: 1; }
+.art.series {
+  width: auto; height: auto; padding: 8px 16px; text-align: center; font-family: var(--font-num); font-weight: 500; font-size: 34px; letter-spacing: .06em;
+  background: var(--panel); border: 2px solid var(--edge); border-radius: 12px;
+}
+.eqs { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; max-width: 100%; background: var(--panel); border: 2px solid var(--edge); border-radius: 12px; }
+.eq { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; font-family: var(--font-num); font-weight: 500; font-size: 32px; line-height: 1.05; min-height: 40px; }
+.eq .ei { width: 38px; height: 38px; flex: none; }
+.eq .et { padding: 0 3px; }
+.vis { width: 100%; max-width: 300px; padding: 8px 12px; background: var(--panel); border: 2px solid var(--edge); border-radius: 12px; display: grid; place-items: center; }
+.vis svg { width: 100%; height: auto; display: block; }
+.vis .word { font-family: var(--font-num); font-weight: 600; font-size: 76px; line-height: 1.15; }
+
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.card {
+  min-height: 96px; padding: 10px 8px; min-width: 0; text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: var(--panel); border: 2px solid var(--edge); border-radius: 12px; transition: transform .08s ease, border-color .08s ease;
+}
+.card:active:not(:disabled) { transform: translateY(2px); border-color: var(--acc); }
+.card .ci { width: 50px; height: 50px; }
+.card .lab { font-weight: 700; font-size: 19px; line-height: 1.15; overflow-wrap: anywhere; }
+.card.txt .lab { font-family: var(--font-num); font-weight: 500; font-size: 40px; }
+.card.txt.small .lab { font-family: var(--font-body); font-weight: 700; font-size: 19px; }
+.card.right { border-color: var(--good); background: var(--good-bg); box-shadow: 0 0 16px rgba(75, 224, 138, .35); }
+.card.wrong { border-color: var(--bad); background: var(--bad-bg); }
+.card:disabled { cursor: default; }
+
+.items { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; width: 100%; }
+.it {
+  position: relative; width: 100px; min-width: 0; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: var(--panel); border: 2px solid var(--edge); border-radius: 12px;
+}
+.it .lab { font-weight: 700; font-size: 15px; line-height: 1.1; text-align: center; }
+.it .badge {
+  position: absolute; top: -9px; right: -7px; width: 28px; height: 28px; border-radius: 6px; background: var(--good); color: #04140B;
+  font-family: var(--font-num); font-weight: 600; font-size: 22px; line-height: 28px; text-align: center;
+}
+.it.done { opacity: .55; border-color: var(--good); }
+.it.on { background: var(--good-bg); border-color: var(--good); }
+.it:disabled { cursor: default; }
+.sumline { font-weight: 700; font-size: 20px; color: var(--muted); }
+.sumline b { font-family: var(--font-num); font-weight: 600; font-size: 34px; color: var(--acc); }
+.sumline.hit b { color: var(--good); }
+
+.numbox {
+  min-width: 190px; padding: 4px 20px 0; text-align: center; min-height: 62px; background: var(--bg);
+  border: 2px solid var(--acc); border-radius: 10px; box-shadow: 0 0 16px var(--glow), inset 0 0 12px var(--glow);
+  font-family: var(--font-num); font-weight: 500; font-size: 48px; line-height: 56px; letter-spacing: .08em; font-variant-numeric: tabular-nums;
+}
+.numbox.empty { color: var(--edge); }
+.keys { display: grid; grid-template-columns: repeat(3, 76px); gap: 8px; }
+.key { height: 48px; background: var(--panel); border: 2px solid var(--edge); border-radius: 10px; font-family: var(--font-num); font-weight: 500; font-size: 30px; line-height: 1; padding-top: 3px; }
+.key:active { border-color: var(--acc); transform: translateY(2px); }
+.key.ok { background: var(--acc); border-color: var(--acc); color: var(--acc-ink); }
+
+.gobtn {
+  min-height: 52px; padding: 0 34px; border: 0; background: var(--acc); color: var(--acc-ink);
+  font-weight: 700; font-size: 21px; letter-spacing: .02em;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+.gobtn:active { filter: brightness(.88); transform: translateY(2px); }
+
+.pairs { display: grid; gap: 10px; width: 100%; max-width: 380px; }
+.pc { position: relative; aspect-ratio: 1; padding: 0; min-width: 0; background: var(--panel2); border: 2px solid var(--acc-deep); border-radius: 10px; color: var(--acc); }
+.pc .back { font-family: var(--font-num); font-weight: 500; font-size: 38px; }
+.pc .face { display: none; width: 68%; height: 68%; margin: 0 auto; }
+.pc.open, .pc.matched { background: var(--panel); border-color: var(--edge); color: var(--ink); }
+.pc.open .back, .pc.matched .back { display: none; }
+.pc.open .face, .pc.matched .face { display: block; }
+.pc.matched { background: var(--good-bg); border-color: var(--good); }
+.pc:disabled { cursor: default; }
+
+.simon { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 300px; }
+.sp { aspect-ratio: 1; border: 0; border-radius: 16px; background: var(--c); opacity: .42; transition: opacity .08s ease, transform .08s ease; }
+.simon.go .sp { opacity: .85; }
+.sp.lit { opacity: 1; transform: scale(.93); filter: brightness(1.35); box-shadow: 0 0 26px var(--c); }
+.sp:disabled { cursor: default; }
+.memstatus { margin: 0; min-height: 1.4em; font-weight: 700; text-align: center; color: var(--ink); }
+
+.oddg { display: grid; gap: 6px; width: 100%; max-width: 340px; }
+.oc { aspect-ratio: 1; padding: 5px; min-width: 0; background: var(--panel); border: 2px solid var(--edge); border-radius: 8px; }
+.oc.right { border-color: var(--good); background: var(--good-bg); box-shadow: 0 0 14px rgba(75, 224, 138, .5); }
+.oc.wrong { border-color: var(--bad); background: var(--bad-bg); }
+.oc:disabled { cursor: default; }
+
+.shake { animation: shake .4s ease; }
+
+/* ---------- dock ---------- */
+.dock { display: flex; justify-content: center; gap: 10px; padding-top: 2px; }
+.dbtn { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; background: var(--panel); border: 2px solid var(--edge); border-radius: 10px; font-weight: 700; font-size: 18px; }
+.dbtn svg { width: 24px; height: 24px; }
+.dbtn .cost { display: flex; align-items: center; gap: 2px; padding: 0 8px; border-radius: 4px; background: var(--hint-bg); color: var(--hint-ink); font-style: normal; font-family: var(--font-num); font-weight: 500; font-size: 22px; line-height: 24px; }
+.dbtn .cost svg { width: 14px; height: 14px; }
+.dbtn:active { border-color: var(--acc); transform: translateY(2px); }
+
+/* ---------- tower ---------- */
+.map { flex: 1; display: flex; flex-direction: column; gap: 12px; padding-bottom: 84px; }
+.hero { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; align-items: center; background: var(--panel); border: 2px solid var(--edge); border-radius: 14px; padding: 12px; }
+.hero .bot { width: 92px; margin: 0; }
+.hero h1 { margin: 0; font-family: var(--font-num); font-weight: 600; font-size: 34px; line-height: 1; letter-spacing: .02em; }
+.hero p { margin: 4px 0 0; color: var(--muted); font-weight: 600; }
+.tower { display: flex; flex-direction: column; gap: 12px; }
+.floor { position: relative; overflow: hidden; background: var(--panel); border: 2px solid var(--edge); border-radius: 14px; padding: 10px 12px 12px; }
+.fnum { position: absolute; right: 8px; top: -10px; font-family: var(--font-num); font-weight: 600; font-size: 104px; line-height: 1; color: transparent; -webkit-text-stroke: 2px var(--acc); opacity: .4; pointer-events: none; }
+.fh { position: relative; display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; align-items: flex-start; }
+.fh b { font-size: 24px; line-height: 1.1; }
+.fh small { color: var(--muted); font-weight: 600; font-size: 15px; }
+.fd { padding: 0 8px; border-radius: 4px; background: var(--acc); color: var(--acc-ink); font-weight: 700; font-size: 13px; line-height: 20px; letter-spacing: .04em; }
+.tiles { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.tile { aspect-ratio: 1; min-width: 0; display: grid; place-items: center; align-content: center; gap: 2px; background: var(--panel2); border: 2px solid var(--edge); border-radius: 10px; font-family: var(--font-num); font-weight: 500; font-size: 30px; line-height: 1; padding-top: 3px; }
+.tile.done { background: var(--acc); border-color: var(--acc); color: var(--acc-ink); }
+.tile.now { border-color: var(--acc); box-shadow: 0 0 0 2px var(--acc), 0 0 18px var(--glow); animation: glow 1.4s ease infinite; }
+.tile.locked { opacity: .5; color: var(--muted); padding-top: 0; }
+.tile .nl { width: 22px; height: 22px; }
+.tile .dots { display: flex; gap: 3px; }
+.tile .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(0, 0, 0, .25); }
+.tile .dots i.on { background: var(--acc-ink); }
+.tile:disabled { cursor: default; }
+.fab { position: fixed; z-index: 15; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); min-width: 220px; max-width: calc(100vw - 32px); }
+.fab:active { transform: translateX(-50%) translateY(2px); }
+
+/* ---------- popup ---------- */
+.pop {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(4, 6, 18, .74);
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.pcard {
+  width: 100%; max-width: 340px; background: var(--panel); border: 2px solid var(--acc); border-radius: 16px; padding: 16px;
+  display: grid; gap: 8px; justify-items: center; text-align: center; box-shadow: 0 0 30px var(--glow); animation: popin .25s ease;
+}
+.pcard .bot { width: 78px; margin: 0; }
+.pcard h2 { margin: 0; font-family: var(--font-num); font-weight: 600; font-size: 46px; line-height: 1; color: var(--acc); letter-spacing: .02em; }
+.pstars { display: flex; gap: 6px; }
+.pstars svg { width: 42px; height: 42px; color: var(--edge); }
+.pstars svg.on { color: var(--gold); animation: starin .45s ease both; }
+.pstars svg.on:nth-child(2) { animation-delay: .15s; }
+.pstars svg.on:nth-child(3) { animation-delay: .3s; }
+.pcard .time { margin: 0; color: var(--muted); font-weight: 700; font-size: 16px; }
+.pcard .gain { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 700; font-size: 20px; }
+.pcard .gain svg { width: 24px; height: 24px; }
+.pcard .fact { margin: 0; font-weight: 600; font-size: 17px; text-wrap: pretty; }
+.pcard .gobtn { width: 100%; margin-top: 4px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); z-index: 30; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); max-width: min(360px, calc(100vw - 32px)); padding: 8px 16px; border-radius: 10px; background: var(--panel2); border: 2px solid var(--acc); font-weight: 700; text-align: center; }
+.confetti { position: fixed; inset: 0; z-index: 25; pointer-events: none; overflow: hidden; }
+.confetti i { position: absolute; top: -16px; left: var(--x); width: 9px; height: 15px; border-radius: 2px; background: var(--c); transform: rotate(var(--r)); animation: fall var(--d) ease-in forwards; }
+
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+@keyframes glow { 0%, 100% { box-shadow: 0 0 0 2px var(--acc), 0 0 8px var(--glow); } 50% { box-shadow: 0 0 0 2px var(--acc), 0 0 22px var(--acc); } }
+@keyframes hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-16px); } 70% { transform: translateY(0); } 85% { transform: translateY(-5px); } }
+@keyframes popin { from { transform: scale(.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes starin { from { transform: scale(0) rotate(-40deg); } to { transform: scale(1) rotate(0); } }
+@keyframes fall { to { transform: translateY(105vh) rotate(calc(var(--r) + 540deg)); } }
+@media (prefers-reduced-motion: reduce) {
+  .bot.hop, .bot.nope, .shake, .tile.now, .pcard, .pstars svg.on { animation: none; }
+  .confetti { display: none; }
+  * { transition: none !important; }
+}
+
+/* ======================= v6: cartoon theme ======================= */
+:root {
+  --bg: #29B6F6; --sky: #29B6F6;
+  --panel: #FFF8E6; --panel2: #F7E8C4; --edge: #CDAE72;
+  --ink: #4A2E12; --muted: #8A6A3B; --ol: #3B2210;
+  --acc: #3DBE5C; --acc-deep: #2A8F43; --acc-ink: #FFFFFF; --glow: rgba(61, 190, 92, .35);
+  --good: #2E9E3E; --good-bg: #D9F5CF; --bad: #E5484D; --bad-bg: #FFDAD6;
+  --hint-bg: #FFF0B8; --hint-line: #E0A800; --hint-ink: #6B4A00; --gold: #FFB300;
+  --beige: #F1E6C8;
+  color-scheme: light;
+}
+[data-world="0"] { --acc: #3DBE5C; --acc-deep: #2A8F43; --glow: rgba(61,190,92,.35); --sky: #29B6F6; }
+[data-world="1"] { --acc: #1E9BE8; --acc-deep: #1475B8; --glow: rgba(30,155,232,.35); --sky: #26C6A8; }
+[data-world="2"] { --acc: #F5A623; --acc-deep: #C77F0B; --glow: rgba(245,166,35,.4); --sky: #FFA94D; }
+[data-world="3"] { --acc: #EE5B7A; --acc-deep: #BD3453; --glow: rgba(238,91,122,.4); --sky: #F0709A; }
+[data-world="4"] { --acc: #8E5BE0; --acc-deep: #6538B5; --glow: rgba(142,91,224,.4); --sky: #8E7CF0; }
+body { background: var(--sky); transition: background-color .4s; }
+.sky {
+  background-color: var(--sky);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.16) 0 34px, rgba(255,255,255,0) 34px 68px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.16) 0 34px, rgba(255,255,255,0) 34px 68px);
+  background-size: auto; transition: background-color .4s;
+}
+.app { max-width: 460px; }
+
+/* top bar */
+.hud { background: linear-gradient(#35A0F0, #1C78D4); border: 3px solid #fff; border-radius: 16px; padding: 6px 8px; gap: 8px; box-shadow: 0 4px 0 rgba(0,0,0,.18); }
+.ribbon { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 12px; color: #fff; background: linear-gradient(#FF6B5E, #D93A2E); box-shadow: 0 3px 0 rgba(0,0,0,.2); }
+.ribbon.blue { background: linear-gradient(#5CC0FF, #2B8EE0); }
+.ribbon svg { width: 24px; height: 24px; }
+.ribbon:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.2); }
+.chip { background: #fff; border: 0; color: var(--ink); border-radius: 22px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.08); }
+.chip.lv { background: transparent; box-shadow: none; color: #fff; justify-content: center; font-family: var(--font-num); font-size: 28px; letter-spacing: .03em; text-shadow: 0 2px 0 rgba(0,0,0,.25); }
+.chip.lv b { display: none; }
+.chip.st { display: none; }
+.chip svg { width: 22px; height: 22px; }
+
+/* puzzle panel */
+.play { background: var(--beige); border: 3px solid #fff; border-radius: 18px; padding: 12px; box-shadow: 0 4px 0 rgba(0,0,0,.14); }
+.par { background: #fff; border: 2px solid var(--edge); }
+.par i { background: linear-gradient(90deg, #FFB300, #FFD54F); }
+.par span { color: var(--ink); text-shadow: none; }
+.par.late i { background: #E4D3A8; }
+.mission { grid-template-columns: 64px minmax(0, 1fr); }
+.bot { width: 64px; }
+.brief { background: #fff; border: 2px solid var(--edge); }
+.brief .tag { background: var(--acc); color: #fff; }
+.brief h2 { color: var(--ink); }
+.stage { gap: 12px; }
+.card { box-shadow: 0 3px 0 var(--edge); }
+.card:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
+.card.right { box-shadow: 0 3px 0 var(--good); }
+.numbox { background: #fff; border-color: var(--acc); }
+.numbox.empty { color: #D8C79C; }
+.key { box-shadow: 0 3px 0 var(--edge); }
+.it, .tile, .pc, .oc { box-shadow: 0 3px 0 var(--edge); }
+.pc .back { color: var(--acc-deep); }
+.oc { background: #fff; }
+.vis { background: #fff; }
+.eqs, .art.series { background: #fff; }
+
+/* buttons */
+.gobtn {
+  clip-path: none; border-radius: 14px; border: 0; border-bottom: 5px solid #B86400; color: #fff;
+  background: linear-gradient(#FFC02E, #FB8C00); text-shadow: 0 2px 0 rgba(0,0,0,.25);
+}
+.gobtn:active { transform: translateY(3px); border-bottom-width: 2px; filter: none; }
+.fab:active { transform: translateX(-50%) translateY(3px); }
+
+/* bottom action bar: hex buttons */
+.acts { display: flex; justify-content: center; gap: 22px; padding-top: 6px; }
+.act { position: relative; width: 74px; padding: 0; border: 0; background: transparent; display: grid; justify-items: center; gap: 0; }
+.act .hx { width: 66px; height: 60px; display: grid; place-items: center; color: #fff; background: linear-gradient(#6FD14F, #2E9E3E);
+  clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); filter: drop-shadow(0 3px 0 rgba(0,0,0,.25)); }
+.act .hx svg { width: 32px; height: 32px; }
+.act .cost { margin-top: -8px; display: flex; align-items: center; gap: 2px; padding: 0 9px; border-radius: 8px; background: linear-gradient(#FFC02E, #FB8C00); color: #fff; font-style: normal; font-family: var(--font-num); font-weight: 500; font-size: 22px; line-height: 24px; box-shadow: 0 2px 0 #B86400; }
+.act .cost svg { width: 14px; height: 14px; }
+.act:active .hx { transform: translateY(2px); }
+.act.off { opacity: .45; }
+
+/* tasks screen */
+.map { padding-bottom: 90px; }
+.hero { display: none; }
+.floor { background: rgba(255,255,255,.86); border: 3px solid #fff; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.fnum { opacity: .28; }
+.tile { background: #fff; }
+.tile.done { background: var(--acc); color: #fff; border-color: var(--acc-deep); }
+.tile .dots i { background: rgba(0,0,0,.2); }
+.tile .dots i.on { background: #fff; }
+.tile.locked { background: #E9E2CF; }
+
+/* home */
+.home { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 4px; }
+.htop { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+.pill { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; background: #fff; border-radius: 22px; box-shadow: 0 3px 0 rgba(0,0,0,.15); font-weight: 700; }
+.pill b { font-family: var(--font-num); font-weight: 500; font-size: 28px; line-height: 1; }
+.pill svg { width: 22px; height: 22px; }
+.logo { margin: 0; text-align: center; font-family: var(--font-num); font-weight: 600; font-size: 46px; line-height: 1; color: #fff; letter-spacing: .03em; text-shadow: 0 3px 0 rgba(0,0,0,.25), 0 0 0 #000; -webkit-text-stroke: 1.5px #1A4F8C; paint-order: stroke fill; }
+.logo span { color: #FFD23F; }
+.frame { position: relative; width: min(78vw, 300px); aspect-ratio: .88; margin-top: 4px; }
+.portrait { position: absolute; inset: 0 0 34px; background: radial-gradient(circle at 50% 40%, #FFE9B0, #F2B66B); border: 10px solid #8A4B1E; border-radius: 12px; box-shadow: 0 0 0 3px #5B2F10, 0 6px 0 3px rgba(0,0,0,.2); display: grid; place-items: end center; overflow: hidden; }
+.portrait svg { width: 92%; height: auto; display: block; }
+.rankbar { position: absolute; left: 6%; right: 6%; bottom: 0; padding: 6px 6px 8px; text-align: center; background: linear-gradient(#FFB300, #E67E00); border: 3px solid #8A4B1E; border-radius: 10px; color: #fff; line-height: 1; text-shadow: 0 2px 0 rgba(0,0,0,.3); }
+.rankbar small { display: block; font-size: 14px; font-weight: 700; }
+.rankbar b { font-family: var(--font-num); font-weight: 500; font-size: 30px; }
+.upg { margin: 0; text-align: center; color: #fff; font-weight: 700; font-size: 17px; text-shadow: 0 2px 0 rgba(0,0,0,.25); }
+.hbtns { margin-top: auto; padding-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 22px; }
+.round { position: relative; width: 66px; height: 66px; display: grid; place-items: center; border: 4px solid #fff; border-radius: 50%; color: #fff; background: linear-gradient(#5CC0FF, #2B8EE0); box-shadow: 0 5px 0 rgba(0,0,0,.2); }
+.round svg { width: 34px; height: 34px; }
+.round i { position: absolute; right: -4px; bottom: -6px; min-width: 28px; padding: 0 6px; border-radius: 12px; background: #fff; color: var(--ink); font-style: normal; font-family: var(--font-num); font-size: 20px; line-height: 24px; box-shadow: 0 2px 0 rgba(0,0,0,.2); }
+.round:active, .bigplay:active { transform: translateY(3px); }
+.bigplay { width: 110px; height: 84px; display: grid; place-items: center; border: 4px solid #fff; border-radius: 22px; color: #fff; background: linear-gradient(#6FD14F, #2E9E3E); box-shadow: 0 6px 0 rgba(0,0,0,.22); }
+.bigplay svg { width: 52px; height: 52px; }
+
+/* daily bonus */
+.dcard { width: 100%; max-width: 340px; background: #F7E7BE; border: 4px solid #B07A3A; border-radius: 18px; padding: 34px 14px 14px; position: relative; text-align: center; box-shadow: 0 6px 0 rgba(0,0,0,.25); animation: popin .25s ease; }
+.dtitle { position: absolute; left: 50%; top: -18px; transform: translateX(-50%); white-space: nowrap; padding: 6px 24px; background: linear-gradient(#FFB300, #E67E00); border: 3px solid #8A4B1E; border-radius: 12px; color: #fff; font-family: var(--font-num); font-size: 28px; line-height: 1.1; text-shadow: 0 2px 0 rgba(0,0,0,.3); }
+.dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dcell { position: relative; padding: 6px 4px 4px; border-radius: 10px; background: #fff; border: 2px solid #D9BE86; display: grid; justify-items: center; gap: 0; font-weight: 700; min-height: 74px; }
+.dcell svg { width: 26px; height: 26px; }
+.dcell b { font-family: var(--font-num); font-weight: 500; font-size: 24px; line-height: 1; }
+.dcell small { font-size: 13px; color: var(--muted); }
+.dcell.today { border-color: var(--acc); box-shadow: 0 0 0 3px var(--glow); background: #EFFFE9; }
+.dcell.done { background: #DDF3D2; }
+.dcell.done::after { content: '✓'; position: absolute; right: 6px; top: 2px; color: var(--good); font-size: 22px; }
+.dcell.lock { opacity: .6; background: #E6DCC2; }
+.dcell.big { grid-column: 1 / -1; min-height: 64px; background: #FFF1C9; }
+.dcard .gobtn { width: 100%; margin-top: 12px; }
+.dcard .dclose { margin-top: 8px; border: 0; background: transparent; color: var(--muted); font-weight: 700; text-decoration: underline; }
+
+/* hidden objects / symbols / race */
+.targets { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.tg { position: relative; width: 44px; height: 44px; padding: 4px; background: #fff; border: 2px solid var(--edge); border-radius: 10px; }
+.tg svg { width: 100%; height: 100%; display: block; }
+.tg.got { background: #D9F5CF; border-color: var(--good); }
+.tg.got::after { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--good); font-size: 32px; font-weight: 800; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+.scene { width: 100%; max-width: 380px; border: 3px solid #fff; border-radius: 12px; box-shadow: 0 3px 0 var(--edge); background: #fff; touch-action: manipulation; }
+.scene use { cursor: pointer; }
+@keyframes ping { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+.scene .ring { fill: none; stroke: #2EBD4E; stroke-width: 3.5; }
+.scene .lens { fill: none; stroke: #FF8A00; stroke-width: 3.5; animation: ping .7s ease infinite; }
+.glwrap { position: relative; width: 100%; max-width: 340px; height: 340px; background: #fff; border: 3px solid #fff; border-radius: 12px; box-shadow: 0 3px 0 var(--edge); overflow: hidden; }
+.gl { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; padding: 0; border: 0; background: transparent; font-family: 'Rajdhani', system-ui, sans-serif; font-weight: 800; font-size: 38px; line-height: 44px; color: #111; text-align: center; }
+.gl.found { color: #2EBD4E; }
+.gl.found::after { content: ''; position: absolute; inset: 3px; border: 3px solid #2EBD4E; border-radius: 50%; }
+.gl.lens { animation: ping .7s ease infinite; background: rgba(255,138,0,.28); border-radius: 50%; }
+.race { width: 100%; max-width: 380px; display: grid; gap: 10px; }
+.lane { position: relative; height: 62px; border-radius: 6px; background: #4A4F55; box-shadow: 0 3px 0 rgba(0,0,0,.25); touch-action: none; overflow: hidden; }
+.lane::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 3px dashed rgba(255,255,255,.75); }
+.car { position: absolute; left: 0; top: 11px; width: 74px; height: 40px; }
+.car svg { width: 100%; height: 100%; display: block; }
+.flag { position: absolute; top: 0; bottom: 0; width: 24px; background-image: conic-gradient(#111 25%, #fff 0 50%, #111 0 75%, #fff 0); background-size: 12px 12px; border-radius: 3px; touch-action: none; cursor: ew-resize; }
+.flag.can::after { content: '⇆'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 26px; height: 26px; line-height: 24px; text-align: center; border-radius: 50%; background: #FFB300; color: #fff; font-size: 16px; box-shadow: 0 2px 0 rgba(0,0,0,.3); }
+.you { position: absolute; left: 0; top: -16px; font-size: 13px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px #000; }
+.lanewrap { position: relative; padding-top: 2px; }
+.race .gobtn { justify-self: center; min-width: 180px; }
+@media (prefers-reduced-motion: reduce) { .gl.lens, .scene .lens { animation: none; } }
+
+
+/* ---- v6 extras ---- */
+body { font-family: var(--font-body); }
+.hud[hidden] { display: none !important; }
+.hud .chip:last-child { min-width: 84px; justify-content: center; }
+.hud .chip b { font-size: 26px; font-weight: 700; }
+.chip.lv { font-weight: 800; }
+.dock { display: none; }
+.brief h2 { font-weight: 800; }
+.brief .tag { font-weight: 800; }
+.home[hidden] { display: none !important; }
+.home { min-height: calc(100dvh - 24px); }
+.bonusdot, #bonusDot[hidden] { display: none; }
+.round i[hidden] { display: none; }
+.dcard .sinfo { margin: 0 0 6px; font-weight: 600; font-size: 17px; color: var(--ink); }
+.gobtn.red { border-bottom-color: #8F1F1F; background: linear-gradient(#FF7B6B, #E5352E); }
+
+/* popup: aasman + kirano */
+.pop {
+  background:
+    radial-gradient(circle at 50% 26%, rgba(255, 255, 255, .6), rgba(255, 255, 255, 0) 52%),
+    repeating-conic-gradient(from 0deg at 50% 26%, rgba(255, 255, 255, .22) 0 7deg, rgba(255, 255, 255, 0) 7deg 14deg),
+    #1FB1F5;
+  overflow-y: auto; align-items: start;
+}
+.pop.dim { background: rgba(8, 40, 70, .62); align-items: center; }
+.pcard { background: transparent; border: 0; box-shadow: none; padding: 6px 0 0; gap: 0; max-width: 340px; margin: auto; }
+.pcard .bot { width: 168px; padding: 8px 8px 0; background: radial-gradient(circle at 50% 40%, #FFE9B0, #F2B66B); border: 9px solid #8A4B1E; border-radius: 12px; box-shadow: 0 0 0 3px #5B2F10, 0 6px 0 3px rgba(0, 0, 0, .2); }
+.pcard h2 { position: relative; z-index: 1; margin-top: -16px; padding: 4px 26px 6px; background: linear-gradient(#FFB300, #E67E00); border: 3px solid #8A4B1E; border-radius: 12px; color: #fff; font-size: 32px; font-weight: 800; line-height: 1.15; text-shadow: 0 2px 0 rgba(0, 0, 0, .3); letter-spacing: 0; }
+.pedestal { width: 100%; margin-top: 10px; padding: 14px 14px 16px; display: grid; gap: 8px; justify-items: center; text-align: center; background: linear-gradient(#EFE3C4, #D2C29A); border: 4px solid #fff; border-radius: 18px 18px 10px 10px; box-shadow: 0 6px 0 rgba(0, 0, 0, .22); }
+.pcard .time { color: var(--muted); }
+.pcard .fact { color: var(--ink); }
+.pcard .gobtn { margin-top: 2px; }
+.pstars svg { width: 46px; height: 46px; color: #C9B98F; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .15)); }
+.pstars svg.on { color: var(--gold); }
+.confetti { z-index: 40; }
+
+/* map: card list */
+.map { gap: 14px; }
+.tile { font-weight: 800; }
+.fh b { color: var(--ink); font-weight: 800; }
+.fh small { color: var(--muted); }
+.fd { color: #fff; }
+.fnum { -webkit-text-stroke-color: var(--acc); }
+.fab { z-index: 15; }
+.toast { background: #fff; color: var(--ink); border-color: var(--acc); }
+.hintbox { border-radius: 12px; }
+.mission { align-items: center; }
+.logo { white-space: nowrap; font-size: clamp(30px, 10.6vw, 46px); font-weight: 800; }
+.glwrap { height: auto; aspect-ratio: 1 / 1; }
+.gl.bad { color: #E5484D; opacity: .5; }
+.acts { padding-bottom: 16px; }
+.round i { font-weight: 800; }
+
+
+/* ---- v7: khel-khel (playful) ---- */
+[data-world="5"] { --acc: #00A896; --acc-deep: #007F73; --glow: rgba(0,168,150,.4); --sky: #4DD0E1; }
+@keyframes drift { from { background-position: 0 0, 0 0; } to { background-position: 90px 40px, -90px 40px; } }
+.sky { animation: drift 24s ease-in-out infinite alternate; overflow: hidden; }
+.bub { position: absolute; left: var(--x); bottom: -60px; width: var(--s); height: var(--s); border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.9), rgba(255,255,255,.18) 60%); border: 2px solid rgba(255,255,255,.55); animation: rise2 var(--d) linear var(--w) infinite; }
+@keyframes rise2 { from { transform: translateY(0) translateX(0); } 50% { transform: translateY(-55vh) translateX(14px); } to { transform: translateY(-115vh) translateX(-8px); } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes rise { from { transform: translateY(14px) scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes jump { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-22px) rotate(-5deg); } 60% { transform: translateY(0) rotate(4deg); } 80% { transform: translateY(-6px); } }
+@keyframes popout { to { transform: scale(1.6); opacity: 0; } }
+@keyframes drop2 { from { transform: translateY(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes wob { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+.portrait svg { animation: bob 3s ease-in-out infinite; }
+.portrait.jump { animation: jump .6s ease; }
+.bigplay { animation: pulse 1.6s ease-in-out infinite; }
+.logo { animation: bob 3.4s ease-in-out infinite; }
+.stage > * { animation: rise .38s cubic-bezier(.2, 1.5, .4, 1) both; }
+.choices .card:nth-child(2) { animation-delay: .05s; } .choices .card:nth-child(3) { animation-delay: .1s; } .choices .card:nth-child(4) { animation-delay: .15s; }
+.card, .key, .tile, .act, .round, .bigplay, .gobtn, .ribbon { transition: transform .12s cubic-bezier(.3, 1.8, .5, 1), box-shadow .1s; }
+.card:active:not(:disabled), .key:active { transform: scale(.94); }
+.card.right { animation: pulse .5s ease 2; }
+.tile.now { animation: pulse 1.2s ease-in-out infinite; }
+.tile.done:nth-child(odd) { transform: rotate(-2deg); } .tile.done:nth-child(even) { transform: rotate(2deg); }
+.pcard .bot { animation: bob 1.6s ease-in-out infinite; }
+.pcard h2 { animation: wob 1.2s ease-in-out infinite; }
+.pstars svg.on { animation: starin .5s cubic-bezier(.2, 1.8, .4, 1) both, pulse 1.4s 1s ease-in-out infinite; }
+.lens { outline: 4px solid #FF8A00; outline-offset: 2px; animation: pulse .7s ease-in-out infinite !important; }
+
+.tubes { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; max-width: 380px; padding-top: 14px; }
+.tube { width: 54px; height: 152px; padding: 6px 5px; display: flex; flex-direction: column-reverse; gap: 3px; background: rgba(255,255,255,.6); border: 3px solid #fff; border-radius: 8px 8px 28px 28px; box-shadow: 0 3px 0 var(--edge); transition: transform .14s cubic-bezier(.3, 1.8, .5, 1); animation: none !important; }
+.tube.sel { transform: translateY(-16px); border-color: var(--acc); }
+.tube.done { border-color: var(--good); box-shadow: 0 0 0 3px var(--good), 0 3px 0 var(--edge); }
+.tube .u { flex: none; height: 30px; border-radius: 7px; background: var(--c); border: 2px solid rgba(0,0,0,.22); box-shadow: inset 0 6px 0 rgba(255,255,255,.35); }
+.tube .u.drop { animation: drop2 .3s cubic-bezier(.3, 1.5, .5, 1); }
+.lights { display: grid; gap: 8px; width: 100%; max-width: 300px; }
+.lt { aspect-ratio: 1; border-radius: 16px; border: 3px solid #fff; background: #3B4468; box-shadow: 0 4px 0 #1F2540; transition: background .15s, box-shadow .15s; }
+.lt.on { background: radial-gradient(circle at 50% 40%, #FFF6B8, #FFC83D); box-shadow: 0 4px 0 #C98E00, 0 0 20px rgba(255,200,61,.95); }
+.slide { display: grid; gap: 6px; width: 100%; max-width: 300px; padding: 8px; background: rgba(255,255,255,.6); border-radius: 16px; box-shadow: 0 3px 0 var(--edge); }
+.sl { aspect-ratio: 1; border-radius: 12px; font-family: var(--font-num); font-weight: 800; font-size: 36px; line-height: 1; color: #fff; background: linear-gradient(#5CC0FF, #2B8EE0); border: 3px solid #fff; box-shadow: 0 4px 0 #1475B8; animation: none !important; }
+.sl.ok { background: linear-gradient(#6FD14F, #2E9E3E); box-shadow: 0 4px 0 #1F7A31; }
+.sl.blank { visibility: hidden; }
+.numfield { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1 / 1; background: rgba(255,255,255,.6); border: 3px solid #fff; border-radius: 16px; box-shadow: 0 3px 0 var(--edge); }
+.bn { position: absolute; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; border: 3px solid #fff; color: #fff; font-family: var(--font-num); font-weight: 800; font-size: 24px; line-height: 1; background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.6), var(--c) 45%); box-shadow: 0 4px 0 rgba(0,0,0,.25); text-shadow: 0 2px 0 rgba(0,0,0,.35); animation: bob 2.4s ease-in-out infinite; }
+.bn.small { font-size: 17px; }
+.bn.gone { animation: popout .25s forwards !important; pointer-events: none; }
+.bubs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; width: 100%; max-width: 320px; }
+.bb { aspect-ratio: 1; border-radius: 50%; border: 3px solid #fff; background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.85) 0 12%, var(--c) 42%); box-shadow: 0 4px 0 rgba(0,0,0,.22); animation: bob 2.6s ease-in-out infinite; }
+.bb:nth-child(3n) { animation-delay: -.8s; } .bb:nth-child(3n+1) { animation-delay: -1.6s; }
+.bb.gone { animation: popout .22s forwards !important; pointer-events: none; }
+.bb.bad { animation: shake .4s !important; }
+@media (prefers-reduced-motion: reduce) { .sky, .bub, .portrait svg, .bigplay, .logo, .stage > *, .tile.now, .pcard .bot, .pcard h2, .bn, .bb { animation: none !important; } }
+.gl { width: 36px; height: 36px; margin: -18px 0 0 -18px; font-size: 30px; line-height: 36px; }
+.numfield { aspect-ratio: 1 / .86; }
+
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2z" fill="#FFC21A" stroke="#C98E00" stroke-width="1.2"/><rect x="9" y="19.2" width="6" height="2.6" rx="1.3" fill="#8A93A6"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" fill="currentColor"/></symbol>
+  <symbol id="i-skip" viewBox="0 0 24 24"><path d="M3 5l8.5 7L3 19zM12.5 5L21 12l-8.5 7z" fill="currentColor"/></symbol>
+  <symbol id="i-tower" viewBox="0 0 24 24"><path d="M4 21V9h4V5h3V2h2v3h3v4h4v12z" fill="currentColor"/><path d="M9 21v-4h6v4M8 12h2M14 12h2" stroke="#090C1E" stroke-width="1.6" fill="none"/></symbol>
+  <symbol id="i-lens" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.2" fill="rgba(255,255,255,.3)" stroke="currentColor" stroke-width="2.6"/><path d="M15 15l6 6" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M14 5l-7 7 7 7M7 12h13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.4" fill="none" stroke="currentColor" stroke-width="2.8"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.2-5.1M19 4v4.5h-4.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2" fill="#FF5E5E" stroke="#fff" stroke-width="1.6"/><rect x="2" y="7" width="20" height="4.5" rx="1.5" fill="#FF8A8A" stroke="#fff" stroke-width="1.6"/><path d="M12 7v14" stroke="#FFD23F" stroke-width="3"/><path d="M12 7C9 2 5 4 8 7M12 7c3-5 7-3 4 0" fill="none" stroke="#FFD23F" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><rect x="4.5" y="4" width="15" height="18" rx="2" fill="#fff" stroke="#fff" stroke-width="1"/><rect x="8" y="2" width="8" height="4" rx="1.4" fill="#2B8EE0" stroke="#fff" stroke-width="1.4"/><path d="M8 11h8M8 15h8M8 19h5" stroke="#2B8EE0" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l14 8-14 8z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="o-clock" viewBox="0 0 40 40"><rect width="40" height="40" fill="transparent"/><circle cx="20" cy="20" r="16" fill="#fff" stroke="#3B2210" stroke-width="3"/><path d="M20 20V9M20 20l7 4" stroke="#3B2210" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="20" cy="20" r="2" fill="#E5484D"/></symbol>
+  <symbol id="o-lamp" viewBox="0 0 40 40"><rect width="40" height="40" fill="transparent"/><path d="M10 19L14 6h12l4 13z" fill="#FFC83D" stroke="#3B2210" stroke-width="2.6" stroke-linejoin="round"/><path d="M20 19v13" stroke="#3B2210" stroke-width="3"/><rect x="11" y="32" width="18" height="5" rx="2.4" fill="#8D5A2B" stroke="#3B2210" stroke-width="2.4"/></symbol>
+  <symbol id="o-plant" viewBox="0 0 40 40"><rect width="40" height="40" fill="transparent"/><path d="M20 25C8 22 8 8 20 5c12 3 12 17 0 20z" fill="#4CAF50" stroke="#3B2210" stroke-width="2.4" stroke-linejoin="round"/><path d="M20 25V12" stroke="#2E7D32" stroke-width="2"/><path d="M11 25h18l-3 13H14z" fill="#D2693C" stroke="#3B2210" stroke-width="2.4" stroke-linejoin="round"/></symbol>
+  <symbol id="o-books" viewBox="0 0 40 40"><rect width="40" height="40" fill="transparent"/><rect x="5" y="26" width="30" height="9" rx="1.5" fill="#E5484D" stroke="#3B2210" stroke-width="2.4"/><rect x="8" y="17" width="25" height="9" rx="1.5" fill="#3E8EDE" stroke="#3B2210" stroke-width="2.4"/><rect x="6" y="8" width="27" height="9" rx="1.5" fill="#FFC83D" stroke="#3B2210" stroke-width="2.4"/></symbol>
+  <symbol id="o-mug" viewBox="0 0 40 40"><rect width="40" height="40" fill="transparent"/><path d="M27 15h3a5 5 0 0 1 0 11h-3" fill="none" stroke="#3B2210" stroke-width="3"/><rect x="8" y="11" width="20" height="23" rx="3.5" fill="#fff" stroke="#3B2210" stroke-width="2.6"/><rect x="8" y="16" width="20" height="5" fill="#E5484D"/><path d="M14 8c-2-3 2-3 0-6M21 8c-2-3 2-3 0-6" stroke="#9AA5B1" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="o-key" viewBox="0 0 40 40"><rect width="40" height="40" fill="transparent"/><circle cx="12" cy="13" r="7.5" fill="none" stroke="#3B2210" stroke-width="7"/><circle cx="12" cy="13" r="7.5" fill="none" stroke="#FFC83D" stroke-width="3.2"/><path d="M17.5 18.5L34 35M27 28l4-4M31 32l4-4" stroke="#3B2210" stroke-width="6" stroke-linecap="round"/><path d="M17.5 18.5L34 35M27 28l4-4M31 32l4-4" stroke="#FFC83D" stroke-width="2.6" stroke-linecap="round"/></symbol>
+  <symbol id="o-fish" viewBox="0 0 40 40"><rect width="40" height="40" fill="transparent"/><path d="M28 20l10-9v18z" fill="#FF8A3D" stroke="#3B2210" stroke-width="2.4" stroke-linejoin="round"/><ellipse cx="17" cy="20" rx="13" ry="9" fill="#FFA24D" stroke="#3B2210" stroke-width="2.6"/><circle cx="11" cy="18" r="2.6" fill="#fff" stroke="#3B2210" stroke-width="1.6"/><circle cx="11" cy="18" r="1" fill="#3B2210"/></symbol>
+  <symbol id="o-bird" viewBox="0 0 40 40"><rect width="40" height="40" fill="transparent"/><ellipse cx="19" cy="23" rx="14" ry="11" fill="#3E8EDE" stroke="#3B2210" stroke-width="2.6"/><path d="M31 18l8 2-8 4z" fill="#FFB300" stroke="#3B2210" stroke-width="2.2" stroke-linejoin="round"/><path d="M8 21c7-6 14 2 7 8-5-1-8-4-7-8z" fill="#7DB9F2" stroke="#3B2210" stroke-width="2"/><circle cx="26" cy="19" r="2.2" fill="#fff" stroke="#3B2210" stroke-width="1.4"/><circle cx="26.5" cy="19" r="1" fill="#3B2210"/></symbol>
+  <symbol id="o-kite" viewBox="0 0 40 40"><rect width="40" height="40" fill="transparent"/><path d="M20 3l13 13-13 17L7 16z" fill="#E5484D" stroke="#3B2210" stroke-width="2.6" stroke-linejoin="round"/><path d="M20 3v30M7 16h26" stroke="#3B2210" stroke-width="2"/><path d="M20 33c-4 3 3 4-1 7" fill="none" stroke="#3B2210" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-bot" viewBox="0 0 120 130">
+    <ellipse cx="60" cy="124" rx="32" ry="5" fill="#000" fill-opacity=".22"/>
+    <path d="M24 66q-14 26 4 48 6-24 5-48z" fill="#7A4A22" stroke="#3B2210" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M96 66q14 26-4 48-6-24-5-48z" fill="#7A4A22" stroke="#3B2210" stroke-width="4" stroke-linejoin="round"/>
+    <ellipse cx="60" cy="76" rx="40" ry="44" fill="#A8693A" stroke="#3B2210" stroke-width="4"/>
+    <ellipse cx="60" cy="94" rx="25" ry="27" fill="#F7DFB0"/>
+    <path d="M47 86q4 4 8 0M65 86q4 4 8 0M56 100q4 4 8 0M46 108q4 4 8 0M66 108q4 4 8 0" fill="none" stroke="#CFA66C" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="41" cy="54" r="16" fill="#fff" stroke="#3B2210" stroke-width="4"/>
+    <circle cx="79" cy="54" r="16" fill="#fff" stroke="#3B2210" stroke-width="4"/>
+    <path d="M57 54h6" stroke="#3B2210" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="43" cy="56" r="7" fill="#1B1B2E"/><circle cx="77" cy="56" r="7" fill="#1B1B2E"/>
+    <circle cx="45.5" cy="53" r="2.4" fill="#fff"/><circle cx="79.5" cy="53" r="2.4" fill="#fff"/>
+    <path d="M53 66l7 13 7-13z" fill="#FFB300" stroke="#3B2210" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M26 34L60 18l34 16-34 14z" fill="#2B2F66" stroke="#0B0E22" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M42 41v9q18 8 36 0v-9" fill="#2B2F66" stroke="#0B0E22" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M94 34v16" stroke="#FFC107" stroke-width="3" stroke-linecap="round"/><circle cx="94" cy="53" r="4" fill="#FFC107"/>
+    <path d="M44 121h12M64 121h12" stroke="#FF8A00" stroke-width="6" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<div class="sky" id="sky" data-world="0"></div>
+<div class="app" id="app" data-world="0">
+  <header class="hud" id="hud" hidden>
+    <button class="ribbon" id="btnMap" type="button" aria-label="पीछे"><svg><use href="#i-back"/></svg></button>
+    <div class="chip lv" id="lvChip"><span id="lvName">लेवल</span><b id="lvNo"></b></div>
+    <div class="chip st" aria-label="सितारे"><svg><use href="#i-star"/></svg><b id="starsTot">0</b></div>
+    <div class="chip" aria-label="बल्ब"><svg><use href="#i-bulb"/></svg><b id="bulbs">5</b></div>
+  </header>
+
+  <section class="home" id="screenHome">
+    <div class="htop">
+      <button class="ribbon" id="btnGear" type="button" aria-label="सेटिंग"><svg><use href="#i-gear"/></svg></button>
+      <div class="pill" aria-label="बल्ब"><svg><use href="#i-bulb"/></svg><b id="bulbsH">5</b></div>
+    </div>
+    <h1 class="logo">Brain Tower <span>IQ</span></h1>
+    <div class="frame">
+      <div class="portrait"><svg viewBox="0 0 120 130"><use href="#i-bot"/></svg></div>
+      <div class="rankbar"><small id="rankLv">स्तर 1</small><b id="rankName">विद्यार्थी</b></div>
+    </div>
+    <p class="upg" id="upg"></p>
+    <div class="hbtns">
+      <button class="round" id="btnTasks" type="button" aria-label="सारे लेवल"><svg><use href="#i-clip"/></svg></button>
+      <button class="bigplay" id="btnStart" type="button" aria-label="खेलो"><svg><use href="#i-play"/></svg></button>
+      <button class="round" id="btnBonus" type="button" aria-label="रोज़ का इनाम"><svg><use href="#i-gift"/></svg><i id="bonusDot">!</i></button>
+    </div>
+  </section>
+
+  <main class="play" id="screenPlay" hidden>
+    <div class="par" id="par"><i id="parfill"></i><span id="parlbl"></span></div>
+    <div class="mission">
+      <div class="bot" id="bot"><svg viewBox="0 0 120 130"><use href="#i-bot"/></svg></div>
+      <div class="brief">
+        <div class="top"><span class="tag" id="tag"></span><span class="kind" id="kind"></span></div>
+        <h2 id="title"></h2>
+        <p id="q"></p>
+        <p class="say" id="say" hidden></p>
+      </div>
+    </div>
+    <div class="hintbox" id="hintbox" hidden><svg><use href="#i-bulb"/></svg><span id="hinttext"></span></div>
+    <div class="stage" id="stage"></div>
+    <div class="acts">
+      <button class="act" id="btnRetry" type="button" aria-label="फिर से"><span class="hx"><svg><use href="#i-redo"/></svg></span></button>
+      <button class="act" id="btnHint" type="button" aria-label="संकेत"><span class="hx"><svg><use href="#i-lens"/></svg></span><i class="cost"><svg><use href="#i-bulb"/></svg>1</i></button>
+      <button class="act" id="btnSkip" type="button" aria-label="छोड़ें"><span class="hx"><svg><use href="#i-skip"/></svg></span><i class="cost"><svg><use href="#i-bulb"/></svg>3</i></button>
+    </div>
+  </main>
+
+  <section class="map" id="screenMap" hidden>
+    <div class="tower" id="worlds"></div>
+    <button class="gobtn fab" id="btnPlay" type="button">खेलो</button>
+  </section>
+
+  <div class="pop" id="pop" hidden>
+    <div class="pcard" role="dialog" aria-live="polite">
+      <div class="bot"><svg viewBox="0 0 120 130"><use href="#i-bot"/></svg></div>
+      <h2 id="popTitle">मिशन पूरा!</h2>
+      <div class="pedestal">
+        <div class="pstars" id="popStars"></div>
+        <p class="time" id="popTime"></p>
+        <p class="gain" id="popGain"><svg><use href="#i-bulb"/></svg><span id="popGainTxt"></span></p>
+        <p class="fact" id="popFact"></p>
+        <button class="gobtn" id="popNext" type="button">आगे बढ़ो</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pop dim" id="dpop" hidden>
+    <div class="dcard" role="dialog">
+      <div class="dtitle">रोज़ का इनाम</div>
+      <div class="dgrid" id="dgrid"></div>
+      <button class="gobtn" id="dClaim" type="button">इनाम लो</button>
+      <button class="dclose" id="dClose" type="button">बंद करो</button>
+    </div>
+  </div>
+
+  <div class="pop dim" id="spop" hidden>
+    <div class="dcard" role="dialog">
+      <div class="dtitle">सेटिंग</div>
+      <p class="sinfo">Brain Tower IQ · 6 मंज़िलें, सीखने और सोचने वाली पहेलियाँ। तुम्हारी प्रगति इसी फ़ोन में सेव रहती है।</p>
+      <button class="gobtn" id="sSound" type="button">आवाज़: चालू</button>
+      <button class="gobtn red" id="sReset" type="button">नए सिरे से शुरू करो</button>
+      <button class="dclose" id="sClose" type="button">बंद करो</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden role="status"></div>
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+</div>
+
+
+<script>
+(function () {
+  var IC = {
+    apple: '<path d="M32 22c-7-6-19-3-19 11 0 13 8 22 14 22 3 0 3-1 5-1s2 1 5 1c6 0 14-9 14-22 0-14-12-17-19-11z" fill="#E94B4B"/><path d="M32 22c0-6 1-10 5-13" fill="none"/><path d="M36 14c4-5 11-4 13-2-2 5-9 6-13 2z" fill="#58B947"/>',
+    banana: '<path d="M12 14C8 40 30 58 54 48c3-2 2-5-1-5C36 45 25 33 24 12c-1-3-11-3-12 2z" fill="#FFD23F"/>',
+    grape: '<circle cx="22" cy="28" r="8" fill="#8B5CC8"/><circle cx="42" cy="28" r="8" fill="#8B5CC8"/><circle cx="32" cy="31" r="8" fill="#9A6BD8"/><circle cx="25" cy="43" r="8" fill="#8B5CC8"/><circle cx="39" cy="43" r="8" fill="#8B5CC8"/><circle cx="32" cy="54" r="7" fill="#9A6BD8"/><path d="M32 20v-8" fill="none"/><path d="M34 13c4-5 11-4 13-1-3 5-10 5-13 1z" fill="#58B947"/>',
+    car: '<path d="M5 46V36l10-2 9-14h20l9 14 6 2v10z" fill="#3E8EDE"/><path d="M26 33l5-10h10l7 10z" fill="#CDEBFF"/><circle cx="20" cy="46" r="7" fill="#3A3F52"/><circle cx="46" cy="46" r="7" fill="#3A3F52"/><circle cx="20" cy="46" r="2.4" fill="#CFD4E4" stroke="none"/><circle cx="46" cy="46" r="2.4" fill="#CFD4E4" stroke="none"/>',
+    dog: '<ellipse cx="13" cy="30" rx="8" ry="14" fill="#8A5A33" transform="rotate(15 13 30)"/><ellipse cx="51" cy="30" rx="8" ry="14" fill="#8A5A33" transform="rotate(-15 51 30)"/><ellipse cx="32" cy="36" rx="18" ry="17" fill="#E0A96B"/><ellipse cx="32" cy="45" rx="9" ry="6.5" fill="#F6DDB8" stroke="none"/><circle cx="25" cy="32" r="2.6" fill="var(--ol)" stroke="none"/><circle cx="39" cy="32" r="2.6" fill="var(--ol)" stroke="none"/><ellipse cx="32" cy="41" rx="4" ry="3" fill="var(--ol)"/><path d="M32 44v3M28 49c2 2 6 2 8 0" fill="none" stroke-width="2.4"/>',
+    cat: '<path d="M15 30L17 8l15 11zM49 30L47 8 32 19z" fill="#F2A65A"/><circle cx="32" cy="38" r="19" fill="#F2A65A"/><ellipse cx="24" cy="36" rx="2.6" ry="3.4" fill="var(--ol)" stroke="none"/><ellipse cx="40" cy="36" rx="2.6" ry="3.4" fill="var(--ol)" stroke="none"/><path d="M29 43h6l-3 3z" fill="#F28DA6" stroke-width="2"/><path d="M32 46c-1 3-4 3-6 1M32 46c1 3 4 3 6 1" fill="none" stroke-width="2"/><path d="M8 40l9 2M8 48l9-3M56 40l-9 2M56 48l-9-3" fill="none" stroke-width="2"/>',
+    rabbit: '<ellipse cx="24" cy="18" rx="6" ry="15" fill="#fff"/><ellipse cx="40" cy="18" rx="6" ry="15" fill="#fff"/><ellipse cx="24" cy="19" rx="2.6" ry="9" fill="#F6B3C4" stroke="none"/><ellipse cx="40" cy="19" rx="2.6" ry="9" fill="#F6B3C4" stroke="none"/><ellipse cx="32" cy="43" rx="17" ry="14" fill="#fff"/><circle cx="25" cy="40" r="2.6" fill="var(--ol)" stroke="none"/><circle cx="39" cy="40" r="2.6" fill="var(--ol)" stroke="none"/><path d="M29 45h6l-3 3z" fill="#F28DA6" stroke-width="2"/><path d="M32 48c-1 3-4 3-6 1M32 48c1 3 4 3 6 1" fill="none" stroke-width="2"/>',
+    panda: '<circle cx="16" cy="20" r="8" fill="#14172B"/><circle cx="48" cy="20" r="8" fill="#14172B"/><circle cx="32" cy="36" r="19" fill="#fff"/><ellipse cx="24" cy="34" rx="5" ry="7" fill="#14172B" transform="rotate(20 24 34)"/><ellipse cx="40" cy="34" rx="5" ry="7" fill="#14172B" transform="rotate(-20 40 34)"/><circle cx="25" cy="33" r="1.9" fill="#fff" stroke="none"/><circle cx="39" cy="33" r="1.9" fill="#fff" stroke="none"/><ellipse cx="32" cy="43" rx="4" ry="3" fill="#14172B"/><path d="M32 46v2M28 50c2 2 6 2 8 0" fill="none" stroke-width="2.2"/>',
+    lion: '<circle cx="14" cy="16" r="6" fill="#C9762B"/><circle cx="50" cy="16" r="6" fill="#C9762B"/><circle cx="32" cy="34" r="26" fill="#C9762B"/><circle cx="32" cy="36" r="16" fill="#F2C26B"/><circle cx="26" cy="33" r="2.4" fill="var(--ol)" stroke="none"/><circle cx="38" cy="33" r="2.4" fill="var(--ol)" stroke="none"/><path d="M28 40h8l-4 4z" fill="#8A4B12" stroke-width="2"/><path d="M32 44v2M28 48c2 2 6 2 8 0" fill="none" stroke-width="2.2"/>',
+    frog: '<ellipse cx="32" cy="42" rx="23" ry="15" fill="#6FCB4B"/><circle cx="20" cy="26" r="9" fill="#6FCB4B"/><circle cx="44" cy="26" r="9" fill="#6FCB4B"/><circle cx="20" cy="26" r="4.5" fill="#fff" stroke-width="2.4"/><circle cx="44" cy="26" r="4.5" fill="#fff" stroke-width="2.4"/><circle cx="21" cy="27" r="2" fill="var(--ol)" stroke="none"/><circle cx="43" cy="27" r="2" fill="var(--ol)" stroke="none"/><path d="M16 44c9 8 23 8 32 0" fill="none"/>',
+    elephant: '<ellipse cx="13" cy="30" rx="10" ry="15" fill="#9AA6B8"/><ellipse cx="51" cy="30" rx="10" ry="15" fill="#9AA6B8"/><ellipse cx="32" cy="32" rx="17" ry="17" fill="#B8C2D0"/><path d="M32 40v10c0 7 9 7 9-1" fill="none" stroke="var(--ol)" stroke-width="13"/><path d="M32 40v10c0 7 9 7 9-1" fill="none" stroke="#B8C2D0" stroke-width="7"/><circle cx="25" cy="28" r="2.5" fill="var(--ol)" stroke="none"/><circle cx="39" cy="28" r="2.5" fill="var(--ol)" stroke="none"/>',
+    mouse: '<path d="M44 52c10 0 14-4 14-10" fill="none" stroke-width="3"/><circle cx="16" cy="22" r="9" fill="#E7A5B3"/><circle cx="48" cy="22" r="9" fill="#E7A5B3"/><ellipse cx="32" cy="38" rx="19" ry="16" fill="#C7CCD6"/><circle cx="25" cy="34" r="2.4" fill="var(--ol)" stroke="none"/><circle cx="39" cy="34" r="2.4" fill="var(--ol)" stroke="none"/><ellipse cx="32" cy="43" rx="3.6" ry="3" fill="#F28DA6" stroke-width="2"/><path d="M6 40l12 2M6 48l12-3M58 40l-12 2M58 48l-12-3" fill="none" stroke-width="2"/>',
+    fish: '<path d="M50 32l12-12v24z" fill="#FF8A3D"/><ellipse cx="30" cy="32" rx="22" ry="14" fill="#FFA94D"/><circle cx="20" cy="28" r="3.6" fill="#fff" stroke-width="2.2"/><circle cx="20" cy="28" r="1.4" fill="var(--ol)" stroke="none"/><path d="M34 21c4 7 4 15 0 22" fill="none" stroke-width="2.4"/>',
+    bird: '<path d="M12 34L2 26l1 14z" fill="#2F7FC8"/><ellipse cx="30" cy="36" rx="21" ry="16" fill="#4DA3E8"/><circle cx="46" cy="22" r="11" fill="#4DA3E8"/><path d="M55 20l8 3-8 4z" fill="#FFB02E"/><circle cx="48" cy="20" r="2.4" fill="var(--ol)" stroke="none"/><path d="M16 36c6-10 18-8 22 0-6 8-16 8-22 0z" fill="#2F7FC8"/><path d="M26 52v6M34 52v6" fill="none"/>',
+    chocolate: '<rect x="14" y="8" width="36" height="48" rx="5" fill="#8A5230"/><path d="M14 8h36v12H14z" fill="#E94B7A"/><path d="M14 32h36M14 44h36M26 20v36M38 20v36" fill="none" stroke-width="2"/>',
+    balloon: '<ellipse cx="32" cy="26" rx="17" ry="21" fill="#E94B4B"/><path d="M29 46h6l-3 6z" fill="#E94B4B"/><path d="M32 52c-5 4 5 6 0 11" fill="none" stroke-width="2.4"/><path d="M23 19c1-4 4-6 7-6" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/>',
+    tv: '<path d="M22 8l10 10 10-10" fill="none"/><rect x="6" y="18" width="52" height="38" rx="6" fill="#6B5B95"/><rect x="12" y="24" width="34" height="26" rx="3" fill="#BFE6FF"/><circle cx="52" cy="30" r="2.6" fill="#FFD23F" stroke="none"/><circle cx="52" cy="40" r="2.6" fill="#FFD23F" stroke="none"/>',
+    sun: '<path d="M32 4v8M32 52v8M4 32h8M52 32h8M12 12l6 6M46 46l6 6M12 52l6-6M46 18l6-6" fill="none" stroke="#FFA000" stroke-width="4"/><circle cx="32" cy="32" r="14" fill="#FFC21A"/>',
+    moon: '<path d="M42 6A26 26 0 1 0 58 44 22 22 0 0 1 42 6z" fill="#F7DE7A"/><circle cx="22" cy="34" r="3" fill="#E2C650" stroke="none"/><circle cx="30" cy="46" r="2.4" fill="#E2C650" stroke="none"/>',
+    fullmoon: '<circle cx="32" cy="32" r="23" fill="#F7E7A0"/><circle cx="24" cy="26" r="4.5" fill="#E6D17A" stroke="none"/><circle cx="41" cy="37" r="5.5" fill="#E6D17A" stroke="none"/><circle cx="29" cy="45" r="3" fill="#E6D17A" stroke="none"/>',
+    sunrise: '<path d="M32 10v6M13 18l4 4M51 18l-4 4" fill="none" stroke="#FFA000" stroke-width="4"/><path d="M14 40a18 18 0 0 1 36 0z" fill="#FFB02E"/><path d="M4 40h56" fill="none"/><path d="M32 58v-10M27 53l5-5 5 5" fill="none" stroke="#2F8F2C" stroke-width="4"/>',
+    sunset: '<path d="M32 10v6M13 18l4 4M51 18l-4 4" fill="none" stroke="#FF6B4A" stroke-width="4"/><path d="M14 40a18 18 0 0 1 36 0z" fill="#FF7A59"/><path d="M4 40h56" fill="none"/><path d="M32 46v12M27 53l5 5 5-5" fill="none" stroke="#D23B45" stroke-width="4"/>',
+    cloud: '<path d="M16 48c-7 0-11-5-11-10s4-10 10-10c1-8 8-13 15-13 8 0 14 5 15 12 7 0 12 5 12 11s-5 10-11 10z" fill="#EAF2FF"/>',
+    rain: '<path d="M16 40c-7 0-11-5-11-10s4-10 10-10c1-8 8-13 15-13 8 0 14 5 15 12 7 0 12 5 12 11s-5 10-11 10z" fill="#EAF2FF"/><path d="M18 46l-4 10M32 46l-4 10M46 46l-4 10" fill="none" stroke="#2F8FD6" stroke-width="4.5"/>',
+    sea: '<rect x="5" y="6" width="54" height="52" rx="10" fill="#BDE8FF"/><circle cx="44" cy="20" r="6" fill="#FFC21A"/><path d="M5 36c6-6 10-6 14 0s10 6 14 0 10-6 14 0 6 3 12 0v12a10 10 0 0 1-10 10H15A10 10 0 0 1 5 48z" fill="#3AA0E8"/>',
+    river: '<rect x="5" y="5" width="54" height="54" rx="10" fill="#9ED86E"/><path d="M20 6C8 24 38 28 28 42s6 14 8 16" fill="none" stroke="var(--ol)" stroke-width="13"/><path d="M20 6C8 24 38 28 28 42s6 14 8 16" fill="none" stroke="#4FB4F0" stroke-width="7"/>',
+    hand: '<rect x="14" y="14" width="8" height="28" rx="4" fill="#FFD3A6"/><rect x="23" y="6" width="8" height="36" rx="4" fill="#FFD3A6"/><rect x="32" y="8" width="8" height="34" rx="4" fill="#FFD3A6"/><rect x="41" y="16" width="8" height="26" rx="4" fill="#FFD3A6"/><path d="M16 38c-6-6-12-6-10 0 2 6 8 12 12 14z" fill="#FFD3A6"/><rect x="14" y="30" width="36" height="28" rx="12" fill="#FFD3A6"/>',
+    dr: '<circle cx="32" cy="32" r="23" fill="#E94B4B"/><path d="M19 25c2-6 7-9 12-10" fill="none" stroke="#fff" opacity=".6"/>',
+    db: '<circle cx="32" cy="32" r="23" fill="#3E8EDE"/><path d="M19 25c2-6 7-9 12-10" fill="none" stroke="#fff" opacity=".6"/>',
+    dg: '<circle cx="32" cy="32" r="23" fill="#58B947"/><path d="M19 25c2-6 7-9 12-10" fill="none" stroke="#fff" opacity=".6"/>',
+    dy: '<circle cx="32" cy="32" r="23" fill="#FFC21A"/><path d="M19 25c2-6 7-9 12-10" fill="none" stroke="#fff" opacity=".6"/>',
+    feather: '<path d="M10 54C8 26 30 8 56 8c0 26-14 42-46 46z" fill="#CFE6FF"/><path d="M10 54L44 20" fill="none"/><path d="M26 42l-2-9M35 33l-2-9" fill="none" stroke-width="2.4"/>',
+    stone: '<path d="M7 42l6-17 17-9 19 6 9 14-7 14-23 5z" fill="#9AA0A8"/><path d="M15 31l10-4M30 47l12-6" fill="none" stroke-width="2.4" opacity=".55"/>',
+    leaf: '<path d="M8 56C6 28 26 8 56 8c0 30-18 48-48 48z" fill="#58B947"/><path d="M8 56L42 22M24 42l-11-2M33 32l-2-11" fill="none" stroke-width="2.6"/>',
+    wind: '<path d="M6 22h32c9 0 9-11 0-11M6 34h46c9 0 9 11 0 11M6 46h24c8 0 8 9 0 9" fill="none" stroke="#5BA9D6" stroke-width="4.5"/>',
+    drop: '<path d="M32 5C21 21 14 30 14 41a18 18 0 0 0 36 0c0-11-7-20-18-36z" fill="#3AA0E8"/><path d="M23 41c0 5 3 9 8 10" fill="none" stroke="#fff" stroke-width="3.5" opacity=".7"/>',
+    ingot: '<path d="M14 20h36l9 14H5z" fill="#C5CEDB"/><path d="M5 34h54v18H5z" fill="#8F9BAE"/><path d="M14 20l-9 14M50 20l9 14" fill="none" stroke-width="2.4" opacity=".5"/>',
+    voidic: '<circle cx="32" cy="32" r="23" fill="none" stroke-dasharray="3 8"/><path d="M22 22l20 20M42 22L22 42" fill="none" stroke="#D23B45" stroke-width="4.5"/>',
+    ball: '<circle cx="32" cy="32" r="23" fill="#fff"/><path d="M32 21l10 7-4 12H26l-4-12z" fill="#14172B"/><path d="M32 21V9M42 28l12-4M38 40l7 11M26 40l-7 11M22 28L10 24" fill="none" stroke-width="2.6"/>',
+    box: '<path d="M8 20l24-10 24 10v26L32 56 8 46z" fill="#C98E4F"/><path d="M8 20l24 10 24-10M32 30v26" fill="none"/><path d="M20 15l24 10v8" fill="none" stroke-width="2.4" opacity=".6"/>',
+    triangle: '<path d="M32 7L59 54H5z" fill="#E94B4B"/><path d="M24 40l8-14" fill="none" stroke="#fff" stroke-width="3" opacity=".55"/>',
+    coin: '<circle cx="32" cy="32" r="23" fill="#FFC21A"/><circle cx="32" cy="32" r="16" fill="none" stroke-width="2.2"/><text x="32" y="40" text-anchor="middle" font-size="22" font-weight="800" fill="#8A5A00" stroke="none" font-family="sans-serif">₹</text>',
+    clock3: '<circle cx="32" cy="32" r="25" fill="#fff"/><path d="M32 11v5M53 32h-5M32 53v-5M11 32h5" fill="none" stroke-width="3.4"/><path d="M32 32V15" fill="none" stroke-width="3.2"/><path d="M32 32h12" fill="none" stroke-width="5"/><circle cx="32" cy="32" r="3" fill="var(--ol)"/>',
+    mercury: '<circle cx="32" cy="32" r="21" fill="#A9AEB8"/><circle cx="25" cy="26" r="4" fill="#8D929D" stroke="none"/><circle cx="40" cy="36" r="5" fill="#8D929D" stroke="none"/><circle cx="28" cy="43" r="2.6" fill="#8D929D" stroke="none"/>',
+    venus: '<circle cx="32" cy="32" r="21" fill="#F0C46B"/><path d="M13 28c8-4 14 4 22 0s12-2 16 0M12 40c8-4 14 4 22 0s12-2 18 0" fill="none" stroke="#D9A245" stroke-width="3"/>',
+    earth: '<circle cx="32" cy="32" r="22" fill="#3E8EDE"/><path d="M19 22c6-4 13-2 13 4s-8 5-8 11-8 3-10-3 0-10 5-12z" fill="#58B947" stroke="none"/><path d="M40 34c7 0 11 6 7 12s-11 2-11-4 0-8 4-8z" fill="#58B947" stroke="none"/><circle cx="32" cy="32" r="22" fill="none"/>',
+    mars: '<circle cx="32" cy="32" r="21" fill="#D9573A"/><circle cx="24" cy="25" r="4" fill="#B53F26" stroke="none"/><circle cx="40" cy="38" r="5" fill="#B53F26" stroke="none"/><path d="M20 42c4 2 8 2 11 0" fill="none" stroke="#B53F26" stroke-width="3"/>',
+    bars: '<rect x="7" y="34" width="14" height="23" rx="3" fill="#3E8EDE"/><rect x="25" y="14" width="14" height="43" rx="3" fill="#58B947"/><rect x="43" y="24" width="14" height="33" rx="3" fill="#FFB02E"/>',
+    lock: '<path d="M21 28v-8a11 11 0 0 1 22 0v8" fill="none" stroke-width="5"/><rect x="13" y="28" width="38" height="28" rx="7" fill="#FFC21A"/><circle cx="32" cy="41" r="4" fill="var(--ol)" stroke="none"/><path d="M32 43v6" fill="none" stroke-width="3.4"/>',
+    flower: '<path d="M32 34v24" fill="none" stroke-width="4"/><path d="M32 52c-9-1-14-7-14-12 9 0 14 5 14 12zM32 48c7-1 12-6 12-11-8 0-12 4-12 11z" fill="#58B947"/><circle cx="32" cy="12" r="9" fill="#FF7BAC"/><circle cx="44" cy="21" r="9" fill="#FF7BAC"/><circle cx="40" cy="34" r="9" fill="#FF7BAC"/><circle cx="24" cy="34" r="9" fill="#FF7BAC"/><circle cx="20" cy="21" r="9" fill="#FF7BAC"/><circle cx="32" cy="25" r="8" fill="#FFD23F"/>',
+    palm: '<path d="M28 60c3-14 3-26 0-38h9c-1 12 0 24 3 38z" fill="#B8814A"/><path d="M33 22C25 8 11 10 5 21c10-4 18 0 28 1z" fill="#58B947"/><path d="M33 22C41 8 55 10 60 21c-10-4-18 0-27 1z" fill="#58B947"/><path d="M33 22C28 7 37 2 46 4c-6 4-9 10-13 18z" fill="#58B947"/><path d="M33 22c-13-1-20 7-20 16 7-8 13-10 20-16z" fill="#58B947"/><circle cx="33" cy="25" r="3" fill="#8A5A33"/>',
+    rocket: '<path d="M18 40L7 52l3-19 9-4zM46 40l11 12-3-19-9-4z" fill="#E94B4B"/><path d="M32 3c11 9 15 22 12 38H20C17 25 21 12 32 3z" fill="#F4F6FB"/><path d="M32 3c5 4 8 8 10 13-6-2-14-2-20 0 2-5 5-9 10-13z" fill="#E94B4B"/><circle cx="32" cy="26" r="6" fill="#59B7F2"/><path d="M25 45h14l-7 15z" fill="#FFB02E"/>',
+    castle: '<rect x="9" y="26" width="46" height="31" fill="#B7B2C8"/><rect x="4" y="18" width="14" height="39" fill="#C9C4DA"/><rect x="46" y="18" width="14" height="39" fill="#C9C4DA"/><rect x="25" y="12" width="14" height="45" fill="#C9C4DA"/><path d="M2 18l9-11 9 11zM44 18l9-11 9 11zM23 12l9-9 9 9z" fill="#7B4FB0"/><path d="M25 57V46a7 7 0 0 1 14 0v11z" fill="#5C3D86"/><rect x="9" y="28" width="4" height="6" fill="#FFD23F" stroke="none"/><rect x="51" y="28" width="4" height="6" fill="#FFD23F" stroke="none"/><rect x="30" y="20" width="4" height="7" fill="#FFD23F" stroke="none"/>'
+  };
+  function ico(name) {
+    var inner = IC[name];
+    if (!inner) return '<svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><text x="32" y="44" text-anchor="middle" font-size="36" fill="currentColor">?</text></svg>';
+    return '<svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><g stroke="var(--ol)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">' + inner + '</g></svg>';
+  }
+
+
+  var W = [
+    { n: 'बाल-वाटिका', d: 'बच्चों के लिए' },
+    { n: 'वार्म-अप', d: 'आसान' },
+    { n: 'सोच-विचार', d: 'मध्यम' },
+    { n: 'दिमाग़ी जाल', d: 'कठिन' },
+    { n: 'महा-टेढ़ी', d: 'बहुत कठिन' },
+    { n: 'छत पर बॉस', d: 'अति कठिन' }
+  ];
+  var KIND = { choice: 'चुनो', number: 'संख्या लिखो', order: 'क्रम लगाओ', multi: 'सब चुनो', pairs: 'याददाश्त', simon: 'क्रम याद रखो', odd: 'अलग ढूँढो', find: 'छिपी चीज़ें', glyph: 'चिह्न ढूँढो', race: 'चालाकी', sort: 'रंग छाँटो', lights: 'बत्ती बुझाओ', slide: 'खिसकाओ', tapnum: 'क्रम में छुओ', pop: 'फोड़ो' };
+  function O(e, t, ok, small, fs) { return { e: e, t: t, ok: ok ? 1 : 0, small: small ? 1 : 0, fs: fs || 0 }; }
+  var ORD = 'सही क्रम में एक-एक करके छुओ।';
+  var MULTI = 'सही चीज़ें चुनो, फिर "जाँचो" दबाओ।';
+  var PAIR = 'दो-दो कार्ड खोलो और एक जैसी जोड़ियाँ मिलाओ।';
+  var SIMON = 'देखो कौन-से रंग किस क्रम में चमकते हैं, फिर वही क्रम दोहराओ।';
+  var SIMONR = 'देखो कौन-से रंग किस क्रम में चमकते हैं, फिर उसे उल्टे क्रम में दोहराओ!';
+  var COL = 'शब्द मत पढ़ो! बताओ यह किस रंग में लिखा है?';
+
+  var WL = [
+    /* ===== मंज़िल 1: वार्म-अप ===== */
+    [
+      { type: 'choice', title: 'कौन उड़ सकता है?', q: 'इनमें से कौन आसमान में उड़ सकता है?', opts: [O('bird', 'चिड़िया', 1), O('dog', 'कुत्ता'), O('car', 'कार'), O('elephant', 'हाथी')], hint: 'जिसके पंख हों।', fact: 'चिड़िया पंखों की मदद से उड़ती है।' },
+      { type: 'choice', title: 'तैरने वाली चीज़', q: 'पानी में डालने पर कौन तैरता रहेगा?', opts: [O('stone', 'पत्थर'), O('leaf', 'पत्ता', 1), O('ingot', 'लोहे की सिल्ली'), O('coin', 'सिक्का')], hint: 'सबसे हल्की चीज़।', fact: 'पत्ता पानी से हल्का होता है, इसलिए तैरता है। लोहा और सिक्का डूब जाते हैं।' },
+      { type: 'number', title: 'बिल्ली के कान', q: '1 बिल्ली के 2 कान होते हैं। 3 बिल्लियों के कुल कितने कान हैं?', art: [['#cat', '#cat', '#cat']], ans: 6, hint: '2 + 2 + 2.', fact: '2 × 3 = 6.' },
+      { type: 'order', title: 'छोटी से बड़ी', q: 'छोटी संख्या से बड़ी संख्या के क्रम में छुओ।', items: [{ n: '7' }, { n: '12' }, { n: '25' }, { n: '40' }], hint: 'सबसे छोटी 7 है।', fact: '7 < 12 < 25 < 40.' },
+      { type: 'odd', title: 'अलग रंग', q: 'सब गोले एक जैसे हैं, बस एक अलग है। उसे छुओ!', n: 3, a: 'dr', b: 'dg', hint: 'हरे रंग वाला गोला।', fact: 'तेज़ नज़र! ध्यान से देखना दिमाग़ की कसरत है।' },
+      { type: 'choice', title: 'इंद्रधनुष', q: 'इंद्रधनुष में कुल कितने रंग होते हैं?', opts: [O('', '5'), O('', '7', 1), O('', '9'), O('', '12')], hint: 'बैंगनी से लाल तक गिनो।', fact: 'इंद्रधनुष में 7 रंग होते हैं: बैंगनी, जामुनी, नीला, हरा, पीला, नारंगी और लाल।' },
+      { type: 'multi', title: 'फल चुनो', q: MULTI, items: [{ e: 'apple', t: 'सेब', ok: 1 }, { e: 'car', t: 'कार' }, { e: 'banana', t: 'केला', ok: 1 }, { e: 'grape', t: 'अंगूर', ok: 1 }, { e: 'ball', t: 'गेंद' }], hint: 'तीन फल हैं।', fact: 'सेब, केला और अंगूर फल हैं।' },
+      { type: 'number', title: 'कुत्तों के पैर', q: '1 कुत्ते के 4 पैर होते हैं। 3 कुत्तों के कुल कितने पैर हैं?', art: [['#dog', '#dog', '#dog']], ans: 12, hint: '4 + 4 + 4.', fact: '4 × 3 = 12.' },
+      { type: 'pairs', title: 'जोड़ी मिलाओ', q: PAIR, cards: ['frog', 'panda', 'lion'], hint: 'कार्ड की जगह याद रखो।', fact: 'याददाश्त का अभ्यास दिमाग़ को तेज़ करता है।' },
+      { type: 'choice', title: 'दर्जन', q: 'एक दर्जन में कितनी चीज़ें होती हैं?', opts: [O('', '6'), O('', '10'), O('', '12', 1), O('', '20')], hint: 'केले दर्जन के भाव बिकते हैं।', fact: '1 दर्जन = 12 चीज़ें।' },
+      { type: 'find', scene: 'room', title: 'छिपी चीज़ें', q: 'ऊपर दी गई सब चीज़ें कमरे में छिपी हैं। एक-एक करके ढूँढो और छुओ।', hint: 'घड़ी दीवार पर, किताबें अलमारी में और गमला दाईं ओर है।', fact: 'ध्यान से ढूँढना दिमाग़ की नज़र को तेज़ करता है।' }
+    ],
+    /* ===== मंज़िल 2: सोच-विचार ===== */
+    [
+      { type: 'number', title: 'पाँच की गिनती', q: 'अगली संख्या क्या है?', art: '5 , 10 , 15 , 20 , ?', ans: 25, hint: 'हर बार 5 बढ़ता है।', fact: '20 + 5 = 25.' },
+      { type: 'choice', title: 'कौन अलग है?', q: 'लाल, नीला, गोल, हरा. इनमें कौन अलग है?', opts: [O('', 'लाल', 0, 1), O('', 'नीला', 0, 1), O('', 'गोल', 1, 1), O('', 'हरा', 0, 1)], hint: 'तीन रंग हैं, एक आकार।', fact: 'लाल, नीला और हरा रंग हैं। गोल एक आकार है।' },
+      { type: 'number', title: 'बस का हिसाब', q: 'बस में 12 लोग थे। रास्ते में 5 उतरे और 8 चढ़े। अब बस में कितने लोग हैं?', ans: 15, hint: 'पहले घटाओ, फिर जोड़ो।', fact: '12 − 5 + 8 = 15.' },
+      { type: 'odd', title: 'बिल्ली या कुत्ता?', q: 'सब बिल्लियों में एक कुत्ता छुपा है। उसे ढूँढो!', n: 4, a: 'cat', b: 'dog', hint: 'जिसके कान लटके हों।', fact: 'बहुत बढ़िया! भीड़ में अलग चीज़ ढूँढना ध्यान की परीक्षा है।' },
+      { type: 'multi', title: 'जोड़ 10', q: 'जिनका जोड़ ठीक 10 हो, वे संख्याएँ चुनो, फिर "जाँचो" दबाओ।', sumTo: 10, items: [{ n: '3' }, { n: '5' }, { n: '7' }, { n: '9' }, { n: '2' }], hint: 'दो या तीन संख्याएँ चुनो।', fact: 'जैसे 3 + 7 = 10, या 5 + 3 + 2 = 10.' },
+      { type: 'choice', title: 'कल से आगे', q: 'आज शुक्रवार है। बीते हुए कल से 3 दिन आगे कौन-सा दिन होगा?', opts: [O('', 'शनिवार', 0, 1), O('', 'रविवार', 1, 1), O('', 'सोमवार', 0, 1), O('', 'गुरुवार', 0, 1)], hint: 'बीता हुआ कल गुरुवार है।', fact: 'बीता कल गुरुवार है। उससे 3 दिन आगे: शुक्र, शनि, रवि। जवाब रविवार।' },
+      { type: 'order', title: 'दशमलव का खेल', q: 'छोटी संख्या से बड़ी संख्या के क्रम में छुओ।', items: [{ n: '0.09' }, { n: '0.1' }, { n: '0.19' }, { n: '0.2' }], hint: '0.1 का मतलब 0.10 है।', fact: '0.09 < 0.10 < 0.19 < 0.20.' },
+      { type: 'number', title: 'रस्सी के टुकड़े', q: 'एक रस्सी को 4 जगह से काटा गया। कुल कितने टुकड़े बने?', ans: 5, hint: 'चित्र बनाओ: 1 कट से 2 टुकड़े बनते हैं।', fact: '4 कट लगाने पर 5 टुकड़े बनते हैं।' },
+      { type: 'choice', title: 'मैं कौन हूँ?', q: 'मेरी सुइयाँ हैं पर मैं सिलाई नहीं करता। मैं क्या हूँ?', opts: [O('', 'घड़ी', 1, 1), O('', 'दर्ज़ी', 0, 1), O('', 'कैंची', 0, 1), O('', 'काँटा', 0, 1)], hint: 'मैं समय बताती हूँ।', fact: 'घड़ी में घंटे और मिनट की सुइयाँ होती हैं।' },
+      { type: 'simon', title: 'रंगों का क्रम', q: SIMON, len: 5, hint: 'हर रंग के साथ उसकी जगह बोलो।', fact: 'क्रम याद रखने से दिमाग़ की कार्यशील याददाश्त मज़बूत होती है।' },
+      { type: 'pairs', title: 'जोड़ी मिलाओ', q: PAIR, cards: ['cat', 'rabbit', 'fish', 'bird'], hint: 'एक बार में दो ही कार्ड खुलते हैं।', fact: 'ध्यान से देखने से याददाश्त मज़बूत होती है।' },
+      { type: 'glyph', title: '@ ढूँढो', q: 'बिखरे चिह्नों में से सारे @ छुओ।', target: '@', n: 3, total: 30, pool: ['#', '$', '%', '&', '*', '?', '!', '+', '=', '~'], hint: 'गोल-गोल घुमावदार चिह्न देखो।', fact: 'भीड़ में एक जैसी चीज़ें पहचानना ध्यान की कसरत है।' },
+      { type: 'race', title: 'दौड़ जिताओ', q: 'लाल कार को जिताओ! दौड़ दोनों की बराबर है, पर नियम तुम बदल सकते हो। फिर "शुरू" दबाओ।', hint: 'चेकर वाला फ़िनिश-झंडा खींचकर अपनी कार के पास ले आओ।', fact: 'कभी-कभी जीतने के लिए तेज़ दौड़ना नहीं, नियम बदलना पड़ता है।' }
+    ],
+    /* ===== मंज़िल 3: दिमाग़ी जाल ===== */
+    [
+      { type: 'number', title: 'फ़िबोनाची', q: 'अगली संख्या क्या है?', art: '1 , 1 , 2 , 3 , 5 , 8 , ?', ans: 13, hint: 'पिछली दो संख्याएँ जोड़ो।', fact: '5 + 8 = 13. इसे फ़िबोनाची श्रृंखला कहते हैं।' },
+      { type: 'number', title: 'बढ़ता कमल', q: 'तालाब में कमल हर दिन दुगुने होते हैं। पूरा तालाब 20 दिन में भरता है। आधा तालाब किस दिन भरा था?', ans: 19, hint: 'आधा से पूरा होने में कितना समय लगता है?', fact: 'हर दिन दुगुना होता है, इसलिए पूरा भरने से एक दिन पहले यानी 19वें दिन आधा भरा था।' },
+      { type: 'number', title: 'सुइयों का कोण', q: '6:30 बजे घड़ी की घंटे और मिनट की सुई के बीच कितने डिग्री का कोण होगा?', ans: 15, hint: 'घंटे की सुई 6 और 7 के ठीक बीच में होगी।', fact: '6:30 पर मिनट की सुई 180° पर और घंटे की सुई 195° पर होती है। फ़र्क 15°.' },
+      { type: 'odd', title: 'हल्का-सा अंतर', q: 'सब गोले हरे हैं, पर एक का हरा रंग थोड़ा अलग है। उसे ढूँढो!', n: 5, a: 'dg', f: 'hue-rotate(-38deg)', hint: 'जो थोड़ा पीला-सा दिखे।', fact: 'आँखें रंग का हल्का फ़र्क भी पकड़ लेती हैं, बस ध्यान चाहिए।' },
+      { type: 'multi', title: 'जोड़ 20', q: 'जिनका जोड़ ठीक 20 हो, वे संख्याएँ चुनो, फिर "जाँचो" दबाओ।', sumTo: 20, items: [{ n: '7' }, { n: '9' }, { n: '4' }, { n: '11' }, { n: '6' }], hint: 'दो या तीन संख्याएँ चुनो।', fact: 'जैसे 9 + 11 = 20, या 7 + 9 + 4 = 20.' },
+      { type: 'number', title: 'लाइन में बच्चे', q: 'लाइन में राहुल आगे से 10वें और पीछे से 7वें स्थान पर है। लाइन में कुल कितने बच्चे हैं?', ans: 16, hint: 'राहुल को दो बार गिना गया है।', fact: '10 + 7 − 1 = 16.' },
+      { type: 'choice', title: 'रिश्ता', q: 'एक आदमी फोटो की ओर इशारा करके कहता है: "इसकी माँ मेरी माँ की इकलौती बेटी है।" फोटो वाला उसका क्या लगता है?', opts: [O('', 'बेटा', 0, 1), O('', 'भांजा या भांजी', 1, 1), O('', 'भतीजा', 0, 1), O('', 'भाई', 0, 1)], hint: 'उसकी माँ की इकलौती बेटी यानी उसकी बहन।', fact: 'आदमी की माँ की इकलौती बेटी उसकी बहन है। फोटो वाले की माँ उसकी बहन है, इसलिए वह भांजा या भांजी है।' },
+      { type: 'order', title: 'घात और मूल', q: 'छोटी से बड़ी संख्या के क्रम में छुओ।', items: [{ n: '2³' }, { n: '3²' }, { n: '10' }, { n: '√144' }], hint: '2³ = 8 और 3² = 9.', fact: '2³ = 8, 3² = 9, 10, √144 = 12.' },
+      { type: 'simon', title: 'उल्टा क्रम', q: SIMONR, len: 4, rev: true, hint: 'क्रम को मन में पीछे से बोलो।', fact: 'उल्टा याद रखना सीधे याद रखने से कठिन होता है। शाबाश!' },
+      { type: 'choice', visual: 'stroop', word: 'हरा', ink: '#E94B4B', title: 'रंग बताओ', q: COL, opts: [O('dr', 'लाल', 1), O('dg', 'हरा'), O('db', 'नीला'), O('dy', 'पीला')], hint: 'पढ़ो नहीं, सिर्फ़ रंग देखो।', fact: 'दिमाग़ शब्द पढ़ने की आदत से भ्रमित हो जाता है। इसे स्ट्रूप प्रभाव कहते हैं।' },
+      { type: 'number', title: 'फलों का नया हिसाब', q: 'हर फल की कीमत अलग है। आख़िरी लाइन का जवाब निकालो।', art: [['#banana', '+', '#banana', '=', '12'], ['#banana', '+', '#grape', '+', '#grape', '=', '20'], ['#apple', '+', '#grape', '=', '15'], ['#apple', '×', '#banana', '−', '#grape', '=', '?']], ans: 41, hint: 'पहले केला, फिर अंगूर, फिर सेब निकालो।', fact: 'केला = 6, अंगूर = 7, सेब = 8. इसलिए 8 × 6 − 7 = 41.' },
+      { type: 'find', scene: 'garden', title: 'बाग़ की खोज', q: 'बाग़ में 5 चीज़ें छिपी हैं। सब ढूँढो!', hint: 'पक्षी पेड़ पर, पतंग आसमान में और मछली तालाब में है।', fact: 'अलग-अलग जगह देखने से ही छिपी चीज़ें मिलती हैं।' }
+    ],
+    /* ===== मंज़िल 4: महा-टेढ़ी ===== */
+    [
+      { type: 'number', title: 'तेज़ बढ़त', q: 'अगली संख्या क्या है?', art: '1 , 2 , 6 , 24 , 120 , ?', ans: 720, hint: 'गुणा करो: ×2, ×3, ×4, ×5...', fact: '120 × 6 = 720. ये क्रमगुणित (फैक्टोरियल) संख्याएँ हैं।' },
+      { type: 'number', title: 'गणित का जाल', q: 'पहले गुणा-भाग, फिर घटाओ। जवाब क्या है?', art: '7 × 8 − 6 × 5 ÷ 3', ans: 46, hint: 'पहले 6 × 5 ÷ 3 निकालो।', fact: '7 × 8 = 56 और 6 × 5 ÷ 3 = 10. इसलिए 56 − 10 = 46.' },
+      { type: 'odd', title: 'नीले में अलग', q: 'सब गोले नीले हैं, पर एक थोड़ा अलग है। उसे ढूँढो!', n: 5, a: 'db', f: 'hue-rotate(24deg)', hint: 'जो थोड़ा बैंगनी-सा झुके।', fact: 'बहुत तेज़ नज़र! अंतर बहुत हल्का था।' },
+      { type: 'choice', title: 'दो पिता, दो बेटे', q: 'दो पिता और दो बेटे शिकार पर गए, पर वहाँ सिर्फ़ 3 लोग थे। यह कैसे हो सकता है?', opts: [O('', 'दादा, पिता और बेटा', 1, 1), O('', 'एक गिनती भूल गया', 0, 1), O('', 'दो जुड़वाँ भाई थे', 0, 1), O('', 'यह असंभव है', 0, 1)], hint: 'एक आदमी दो रिश्ते निभा सकता है।', fact: 'दादा, उनके बेटे (पिता) और पोते। बीच वाला आदमी पिता भी है और बेटा भी।' },
+      { type: 'multi', title: 'जोड़ 29', q: 'जिनका जोड़ ठीक 29 हो, वे संख्याएँ चुनो, फिर "जाँचो" दबाओ।', sumTo: 29, items: [{ n: '12' }, { n: '8' }, { n: '15' }, { n: '5' }, { n: '9' }], hint: 'तीन संख्याएँ चुननी पड़ेंगी।', fact: 'जैसे 12 + 8 + 9 = 29, या 15 + 9 + 5 = 29.' },
+      { type: 'number', title: 'पिता और बेटा', q: '5 साल पहले पिता की उम्र बेटे की उम्र से 4 गुना थी। आज पिता 45 साल का है। बेटा आज कितने साल का है?', ans: 15, hint: '5 साल पहले पिता कितने साल का था?', fact: '5 साल पहले पिता 40 का था, इसलिए बेटा 10 का था। आज बेटा 15 का है।' },
+      { type: 'order', title: 'नापने की इकाइयाँ', q: 'छोटी इकाई से बड़ी इकाई के क्रम में छुओ।', items: [{ n: 'मि.मी.', t: 'मिलीमीटर' }, { n: 'से.मी.', t: 'सेंटीमीटर' }, { n: 'मी.', t: 'मीटर' }, { n: 'कि.मी.', t: 'किलोमीटर' }], hint: '1000 मीटर = 1 किलोमीटर।', fact: 'मिलीमीटर < सेंटीमीटर < मीटर < किलोमीटर.' },
+      { type: 'choice', visual: 'ebb', title: 'कौन-सा गोला बड़ा?', q: 'बीच के दोनों नारंगी गोलों में कौन-सा बड़ा है?', opts: [O('', 'बायाँ वाला', 0, 1), O('', 'दायाँ वाला', 0, 1), O('', 'दोनों बराबर', 1, 1), O('', 'पता नहीं', 0, 1)], hint: 'आसपास के गोलों को मत देखो।', fact: 'दोनों बराबर हैं! आसपास के गोले आँखों को धोखा देते हैं। इसे एबिंगहॉस भ्रम कहते हैं।' },
+      { type: 'number', title: 'हाथ मिलाना', q: '10 लोग एक कमरे में हैं। हर आदमी बाकी सबसे एक बार हाथ मिलाता है। कुल कितनी बार हाथ मिलाए जाएँगे?', ans: 45, hint: 'हर जोड़ी को सिर्फ़ एक बार गिनो।', fact: '(10 × 9) ÷ 2 = 45.' },
+      { type: 'choice', title: 'कल का कल', q: 'आज बुधवार है। "आने वाले कल का बीता हुआ कल" कौन-सा दिन है?', opts: [O('', 'मंगलवार', 0, 1), O('', 'बुधवार', 1, 1), O('', 'गुरुवार', 0, 1), O('', 'शुक्रवार', 0, 1)], hint: 'आगे जाओ, फिर पीछे आओ।', fact: 'आने वाला कल गुरुवार है। उसका बीता हुआ कल फिर आज ही है: बुधवार।' },
+      { type: 'pairs', title: 'याददाश्त की परीक्षा', q: PAIR, cards: ['elephant', 'mouse', 'bird', 'fish', 'frog', 'lion'], hint: 'पहले कोनों के कार्ड याद रखो।', fact: 'शाबाश! तुमने बड़ी याददाश्त पहेली पार कर ली।' },
+      { type: 'glyph', title: '8 ढूँढो', q: 'मिलते-जुलते अंकों के बीच सारे 8 छुओ।', target: '8', n: 4, total: 42, pool: ['0', '3', '6', '9', '5', '2', 'B', 'S'], hint: '8 में ऊपर-नीचे दो गोले होते हैं।', fact: 'थोड़े-से अंतर पकड़ने के लिए धीरे और ध्यान से देखना पड़ता है।' }
+    ],
+    /* ===== मंज़िल 5: छत पर बॉस ===== */
+    [
+      { type: 'number', title: 'दुगुना और एक', q: 'अगली संख्या क्या है?', art: '1 , 3 , 7 , 15 , 31 , ?', ans: 63, hint: 'दुगुना करो, फिर 1 जोड़ो।', fact: '31 × 2 + 1 = 63.' },
+      { type: 'number', title: 'कुएँ का घोंघा', q: 'कुआँ 10 मीटर गहरा है। घोंघा दिन में 3 मीटर चढ़ता है और रात में 2 मीटर फिसल जाता है। वह कितने दिन में बाहर निकलेगा?', ans: 8, hint: 'आख़िरी दिन वह फिसलता नहीं।', fact: '7 दिन बाद वह 7 मीटर पर होता है। 8वें दिन 3 मीटर चढ़कर 10 मीटर पहुँचता है और बाहर निकल जाता है।' },
+      { type: 'odd', title: 'सबसे हल्का अंतर', q: 'सब गोले पीले हैं, पर एक का रंग बहुत थोड़ा अलग है। उसे ढूँढो!', n: 6, a: 'dy', f: 'hue-rotate(-14deg)', hint: 'जो थोड़ा नारंगी-सा लगे।', fact: 'ग़ज़ब की नज़र! यह सबसे कठिन अंतर था।' },
+      { type: 'multi', title: 'जोड़ 51', q: 'जिनका जोड़ ठीक 51 हो, वे संख्याएँ चुनो, फिर "जाँचो" दबाओ।', sumTo: 51, items: [{ n: '17' }, { n: '23' }, { n: '9' }, { n: '14' }, { n: '28' }], hint: '23 और 28 को देखो।', fact: '23 + 28 = 51, या 9 + 14 + 28 = 51.' },
+      { type: 'choice', visual: 'stroop', word: 'पीला', ink: '#58B947', title: 'रंग का धोखा', q: COL, opts: [O('dy', 'पीला'), O('dg', 'हरा', 1), O('dr', 'लाल'), O('db', 'नीला')], hint: 'शब्द को अनदेखा करो।', fact: 'शब्द "पीला" था पर रंग हरा। दिमाग़ को रंग और शब्द अलग करना पड़ता है।' },
+      { type: 'number', title: 'भारी सिक्का', q: '9 सिक्कों में से एक सिक्का बाकी से थोड़ा भारी है। दो पलड़े वाले तराज़ू से कम से कम कितनी बार तौलकर उसे पक्का पहचाना जा सकता है?', ans: 2, hint: '9 सिक्कों को 3-3-3 के तीन ढेरों में बाँटो।', fact: 'पहली तौल में दो ढेर तौलो और भारी ढेर पहचानो। दूसरी तौल में उसके 3 सिक्कों में से भारा सिक्का पहचानो। कुल 2 तौल।' },
+      { type: 'number', title: 'अंक 7', q: '1 से 100 तक लिखी गिनती में अंक 7 कुल कितनी बार आता है?', ans: 20, hint: 'इकाई और दहाई के स्थान अलग-अलग गिनो।', fact: 'इकाई में 7, 17, ..., 97 (10 बार) और दहाई में 70 से 79 (10 बार)। कुल 20.' },
+      { type: 'order', title: 'भिन्नों की दौड़', q: 'छोटे से बड़े क्रम में छुओ।', items: [{ n: '1/3' }, { n: '3/8' }, { n: '0.4' }, { n: '5/12' }], hint: 'सबको दशमलव में बदलो।', fact: '1/3 ≈ 0.333, 3/8 = 0.375, 0.4, 5/12 ≈ 0.417.' },
+      { type: 'simon', title: 'लंबा उल्टा क्रम', q: SIMONR, len: 5, rev: true, hint: 'आख़िरी रंग से शुरू करो।', fact: 'उल्टे क्रम में 5 रंग याद रखना बहुत कठिन है। कमाल!' },
+      { type: 'number', title: 'आख़िरी पहेली', q: 'पैटर्न पहचानो और आख़िरी लाइन का जवाब निकालो।', art: [['2 ~ 3 = 13'], ['3 ~ 4 = 25'], ['4 ~ 5 = 41'], ['5 ~ 6 = ?']], ans: 61, hint: 'दोनों संख्याओं का वर्ग लो और जोड़ो।', fact: 'a ~ b = a² + b². इसलिए 5² + 6² = 25 + 36 = 61. बधाई, तुम टावर के बॉस हो!' }
+    ]
+  ];
+
+  var NEWL = [
+    /* ===== बाल-वाटिका (बच्चों के लिए सीखना + खेल) ===== */
+    [
+      { type: 'number', title: 'सेब गिनो', q: 'चित्र में सेब कितने हैं?', art: [['#apple', '#apple', '#apple', '#apple']], ans: 4, hint: 'एक-एक करके उँगली से गिनो।', fact: 'गिनती 1, 2, 3, 4... ऐसे आगे बढ़ती है।' },
+      { type: 'tapnum', title: 'गुब्बारे फोड़ो', q: '1 से 5 तक छोटी से बड़ी संख्या के क्रम में गुब्बारे छुओ।', n: 5, hint: 'पहले 1 ढूँढो।', fact: 'गिनती याद है तो खेल आसान है!' },
+      { type: 'choice', title: 'किसकी आवाज़?', q: 'कुत्ता क्या बोलता है?', art: [['#dog']], opts: [O('', 'भौं-भौं', 1), O('', 'म्याऊँ'), O('', 'टर-टर'), O('', 'चीं-चीं')], hint: 'यह रात में चोर को देखकर भी बोलता है।', fact: 'कुत्ता भौं-भौं करता है, बिल्ली म्याऊँ और मेंढक टर-टर।' },
+      { type: 'choice', title: 'जंगल का राजा', q: 'जंगल का राजा किसे कहते हैं?', opts: [O('lion', 'शेर', 1), O('rabbit', 'खरगोश'), O('frog', 'मेंढक'), O('fish', 'मछली')], hint: 'जिसकी गरदन पर लंबे बाल होते हैं।', fact: 'शेर को जंगल का राजा कहते हैं।' },
+      { type: 'choice', title: 'पहला अक्षर', q: '"सेब" किस अक्षर से शुरू होता है?', art: [['#apple']], opts: [O('', 'क'), O('', 'स', 1), O('', 'म'), O('', 'ब')], hint: 'सेब... स-ए-ब। पहली आवाज़ सुनो।', fact: 'सेब का पहला अक्षर "स" है।' },
+      { type: 'order', title: 'वर्णमाला', q: 'अक्षरों को सही क्रम में एक-एक करके छुओ।', items: [{ n: 'अ' }, { n: 'आ' }, { n: 'इ' }, { n: 'ई' }], hint: 'अ से शुरू करो।', fact: 'अ, आ, इ, ई... ये स्वर हैं।' },
+      { type: 'pop', title: 'लाल बुलबुले', q: 'सिर्फ़ लाल बुलबुले फोड़ो।', color: 'dr', cname: 'लाल', n: 4, hint: 'टमाटर जैसा रंग देखो।', fact: 'रंग पहचानना सीख लिया!' },
+      { type: 'number', title: 'फूल बचे', q: 'बाग़ में 9 फूल थे। 4 मुरझा गए। कितने फूल बचे?', ans: 5, hint: '9 में से 4 घटाओ।', fact: '9 − 4 = 5.' },
+      { type: 'choice', title: 'आकार पहचानो', q: 'इस आकार का नाम क्या है?', art: [['#triangle']], opts: [O('', 'त्रिभुज', 1), O('', 'गोला'), O('', 'चौकोर'), O('', 'तारा')], hint: 'इसमें 3 कोने होते हैं।', fact: 'तीन कोनों वाली आकृति त्रिभुज कहलाती है।' },
+      { type: 'choice', title: 'कौन अलग है?', q: 'इनमें से कौन फल नहीं है?', opts: [O('apple', 'सेब'), O('banana', 'केला'), O('car', 'कार', 1), O('grape', 'अंगूर')], hint: 'जिसे खाया नहीं जाता।', fact: 'कार चलाने की चीज़ है, खाने की नहीं।' },
+      { type: 'multi', title: 'पौधे को क्या चाहिए?', q: MULTI, items: [{ e: 'sun', t: 'धूप', ok: 1 }, { e: 'car', t: 'कार' }, { e: 'drop', t: 'पानी', ok: 1 }, { e: 'chocolate', t: 'चॉकलेट' }], hint: 'दो चीज़ें चाहिए।', fact: 'पौधे को धूप और पानी चाहिए।' },
+      { type: 'choice', title: 'घड़ी देखो', q: 'घड़ी में कितने बजे हैं?', art: [['#clock3']], opts: [O('', '2'), O('', '3', 1), O('', '4'), O('', '6')], hint: 'छोटी सुई 3 पर है, बड़ी सुई 12 पर।', fact: 'बड़ी सुई 12 पर और छोटी सुई 3 पर हो तो 3 बजे होते हैं।' },
+      { type: 'choice', title: 'बारिश कहाँ से?', q: 'बारिश कहाँ से आती है?', opts: [O('cloud', 'बादल', 1), O('sun', 'सूरज'), O('moon', 'चाँद'), O('wind', 'हवा')], hint: 'आसमान में तैरते सफ़ेद-काले गोले।', fact: 'बादलों से बारिश की बूँदें गिरती हैं।' },
+      { type: 'order', title: 'हफ़्ते के दिन', q: 'दिनों को सही क्रम में छुओ।', items: [{ n: 'सोम' }, { n: 'मंगल' }, { n: 'बुध' }, { n: 'गुरु' }], hint: 'सोमवार से शुरू करो।', fact: 'सोम, मंगल, बुध, गुरु, शुक्र, शनि, रवि।' },
+      { type: 'number', title: 'दो का पहाड़ा', q: 'अगली संख्या क्या है?', art: '2 , 4 , 6 , 8 , ?', ans: 10, hint: 'हर बार 2 जोड़ो।', fact: '2 × 5 = 10.' },
+      { type: 'pairs', title: 'जानवर जोड़ी', q: PAIR, cards: ['cat', 'dog', 'bird'], hint: 'कार्ड की जगह याद रखो।', fact: 'याद रखने से दिमाग़ तेज़ होता है।' },
+      { type: 'choice', title: 'सबसे बड़ा', q: 'इनमें सबसे बड़ा जानवर कौन-सा है?', opts: [O('elephant', 'हाथी', 1), O('mouse', 'चूहा'), O('cat', 'बिल्ली'), O('frog', 'मेंढक')], hint: 'जिसकी लंबी सूँड होती है।', fact: 'हाथी सबसे बड़ा ज़मीनी जानवर है।' },
+      { type: 'number', title: 'सिक्के', q: 'हर सिक्का 5 रुपये का है। 3 सिक्के कुल कितने रुपये के हैं?', art: [['#coin', '#coin', '#coin']], ans: 15, hint: '5 + 5 + 5.', fact: '5 × 3 = 15 रुपये।' },
+      { type: 'choice', title: 'सही शब्द', q: 'कौन-सा शब्द सही लिखा है?', opts: [O('', 'किताब', 1, 1), O('', 'कीताब', 0, 1), O('', 'कितब', 0, 1), O('', 'किताबा', 0, 1)], hint: 'पढ़ने वाली चीज़।', fact: 'सही शब्द "किताब" है।' },
+      { type: 'order', title: 'पौधे का सफ़र', q: 'पहले क्या, फिर क्या? क्रम से छुओ।', items: [{ n: 'बीज' }, { n: 'पानी' }, { n: 'अंकुर' }, { n: 'फूल' }], hint: 'पहले बीज बोते हैं।', fact: 'बीज से पौधा और फिर फूल बनता है।' },
+      { type: 'choice', title: 'A for ...', q: 'A for ___ ?', art: [['#apple']], opts: [O('', 'Apple', 1, 1), O('', 'Ball', 0, 1), O('', 'Cat', 0, 1), O('', 'Dog', 0, 1)], hint: 'तस्वीर देखो!', fact: 'A for Apple, B for Ball, C for Cat.' },
+      { type: 'sort', title: 'रंग छाँटो', q: 'एक नली से दूसरी नली में रंग डालो। हर नली में एक ही रंग होना चाहिए।', k: 2, cap: 3, steps: 8, hint: 'ऊपर वाला रंग उसी रंग पर या खाली नली में ही जा सकता है।', fact: 'रंगों को अलग-अलग करना ध्यान की कसरत है।' },
+      { type: 'choice', title: 'हमारी धरती', q: 'हम जिस ग्रह पर रहते हैं, उसका नाम क्या है?', art: [['#earth']], opts: [O('', 'पृथ्वी', 1), O('', 'मंगल'), O('', 'शुक्र'), O('', 'बुध')], hint: 'नीली-हरी गेंद जैसी।', fact: 'हमारी धरती का नाम पृथ्वी है।' }
+    ],
+    /* ===== वार्म-अप extras ===== */
+    [
+      { type: 'tapnum', title: 'उल्टी गिनती', q: '6 से 1 तक बड़ी से छोटी संख्या के क्रम में छुओ।', n: 6, desc: 1, hint: 'पहले 6 ढूँढो।', fact: 'उल्टी गिनती रॉकेट छोड़ने में काम आती है!' },
+      { type: 'lights', title: 'बत्तियाँ बुझाओ', q: 'बत्ती छुओ तो वह और उसके पास की बत्तियाँ बदल जाती हैं। सब बुझा दो।', n: 3, hint: 'बीच की बत्ती दबाकर देखो।', fact: 'हर चाल का असर सोचकर चलना ही पहेली है।' },
+      { type: 'choice', title: 'मोमबत्तियाँ', q: 'कमरे में 3 मोमबत्तियाँ जल रही थीं। हवा से 1 बुझ गई। अब कुल कितनी मोमबत्तियाँ हैं?', opts: [O('', '1'), O('', '2'), O('', '3', 1), O('', '0')], hint: 'बुझी मोमबत्ती भी वहीं रखी है।', fact: 'बुझी मोमबत्ती भी मोमबत्ती ही रहती है, इसलिए कुल 3 हैं।' },
+      { type: 'choice', title: 'छोटा महीना', q: 'साल के कितने महीनों में 28 दिन होते हैं?', opts: [O('', '1'), O('', '2'), O('', '6'), O('', '12', 1)], hint: 'हर महीने में कम से कम 28 दिन तो होते हैं।', fact: 'सभी 12 महीनों में 28 दिन होते हैं (कुछ में उससे ज़्यादा भी)।' }
+    ],
+    /* ===== सोच-विचार extras ===== */
+    [
+      { type: 'slide', title: 'खिसकाओ पहेली', q: 'टाइलों को खिसकाकर 1 से 5 तक क्रम में लगाओ। खाली जगह के पास की टाइल ही खिसकती है।', r: 2, c: 3, steps: 10, hint: 'पहले ऊपर की पंक्ति ठीक करो।', fact: 'खिसकाने वाली पहेली आगे की चाल सोचना सिखाती है।' },
+      { type: 'pop', title: 'हरे के अलावा', q: 'हरे बुलबुले छोड़कर बाकी सब फोड़ो।', color: 'dg', cname: 'हरे', inverse: 1, n: 5, hint: 'हरे को मत छूना।', fact: 'नियम ध्यान से पढ़ना ज़रूरी है।' },
+      { type: 'sort', title: 'तीन रंग', q: 'हर नली में एक ही रंग इकट्ठा करो।', k: 3, cap: 4, steps: 14, hint: 'खाली नली का इस्तेमाल करो।', fact: 'खाली जगह भी एक चाल की तरह काम आती है।' },
+      { type: 'choice', title: 'दौड़ में दूसरे', q: 'दौड़ में तुम दूसरे नंबर वाले को पीछे छोड़ देते हो। अब तुम किस नंबर पर हो?', opts: [O('', 'पहले'), O('', 'दूसरे', 1), O('', 'तीसरे'), O('', 'चौथे')], hint: 'तुमने उसकी जगह ले ली।', fact: 'दूसरे को पीछे छोड़ने पर तुम उसकी जगह यानी दूसरे नंबर पर आते हो।' },
+      { type: 'tapnum', title: 'हिसाब से छुओ', q: 'जवाब के हिसाब से छोटे से बड़े क्रम में छुओ।', items: [{ t: '3×3', v: 9 }, { t: '15−9', v: 6 }, { t: '2+1', v: 3 }, { t: '20÷4', v: 5 }, { t: '4×2', v: 8 }, { t: '0+1', v: 1 }], hint: 'पहले सबके जवाब निकालो।', fact: 'पहले हिसाब, फिर क्रम।' }
+    ],
+    /* ===== दिमाग़ी जाल extras ===== */
+    [
+      { type: 'lights', title: 'बत्तियाँ बुझाओ', q: 'सारी बत्तियाँ बुझा दो।', n: 3, hint: 'कोने की बत्ती से शुरू करो।', fact: 'बत्ती वाली पहेलियों का हल हमेशा होता है।' },
+      { type: 'slide', title: 'आठ का खेल', q: 'टाइलों को खिसकाकर 1 से 8 तक क्रम में लगाओ।', r: 3, c: 3, steps: 14, hint: 'पहले पहली पंक्ति पूरी करो।', fact: 'यह पहेली 100 साल से भी ज़्यादा पुरानी है।' },
+      { type: 'sort', title: 'चार रंग', q: 'हर नली में एक ही रंग इकट्ठा करो।', k: 4, cap: 4, steps: 20, hint: 'ऊपर वाला रंग देखकर चाल चलो।', fact: 'आगे की 2-3 चालें पहले सोचो।' },
+      { type: 'choice', title: 'गोलियाँ', q: 'डॉक्टर ने 3 गोलियाँ दीं और कहा: "हर आधे घंटे पर एक खाओ।" सारी गोलियाँ खाने में कितना समय लगेगा?', opts: [O('', '1 घंटा', 1), O('', '1.5 घंटे'), O('', '2 घंटे'), O('', '30 मिनट')], hint: 'पहली गोली तुरंत खा लोगे।', fact: 'पहली अभी, दूसरी आधे घंटे बाद, तीसरी एक घंटे बाद।' },
+      { type: 'tapnum', title: 'हिसाब की दौड़', q: 'जवाब के हिसाब से छोटे से बड़े क्रम में छुओ।', items: [{ t: '7×6', v: 42 }, { t: '50−9', v: 41 }, { t: '9×4', v: 36 }, { t: '100÷4', v: 25 }, { t: '12+14', v: 26 }, { t: '8×8', v: 64 }, { t: '90÷3', v: 30 }, { t: '5×9', v: 45 }], hint: '25 और 26 पास-पास हैं।', fact: 'पास-पास के जवाब ध्यान से पढ़ो।' }
+    ],
+    /* ===== महा-टेढ़ी extras ===== */
+    [
+      { type: 'lights', title: 'चार-चार की बत्तियाँ', q: 'सारी बत्तियाँ बुझा दो।', n: 4, hint: 'एक कोने से शुरू करो।', fact: 'बड़ी ग्रिड में हर चाल का असर दूर तक जाता है।' },
+      { type: 'slide', title: 'आठ का खेल - कठिन', q: 'टाइलों को क्रम में लगाओ।', r: 3, c: 3, steps: 26, hint: 'एक-एक पंक्ति पूरी करो।', fact: 'धीरज इस पहेली की चाबी है।' },
+      { type: 'sort', title: 'पाँच रंग', q: 'हर नली में एक ही रंग इकट्ठा करो।', k: 5, cap: 4, steps: 26, hint: 'खाली नलियाँ बचाकर रखो।', fact: 'ज़्यादा रंग, ज़्यादा सोच!' },
+      { type: 'choice', title: 'बस ड्राइवर', q: 'तुम बस चला रहे हो। पहले स्टॉप पर 5 लोग चढ़े, दूसरे स्टॉप पर 3 लोग उतरे। ड्राइवर की उम्र क्या है?', opts: [O('', '5 साल'), O('', '3 साल'), O('', '8 साल'), O('', 'तुम्हारी अपनी उम्र', 1)], hint: 'सवाल की शुरुआत पढ़ो: "तुम बस चला रहे हो"।', fact: 'ड्राइवर तुम खुद हो, इसलिए तुम्हारी उम्र ही जवाब है।' }
+    ],
+    /* ===== छत पर बॉस extras ===== */
+    [
+      { type: 'sort', title: 'महा-छँटाई', q: 'हर नली में एक ही रंग इकट्ठा करो।', k: 5, cap: 4, steps: 36, hint: 'हर चाल से पहले सोचो।', fact: 'अब तुम छँटाई के उस्ताद हो!' },
+      { type: 'slide', title: 'महा-खिसकाव', q: 'टाइलों को क्रम में लगाओ।', r: 3, c: 3, steps: 40, hint: 'पहले ऊपर की दो पंक्तियाँ बनाओ।', fact: 'लंबी पहेली भी छोटे-छोटे कदमों से हल होती है।' },
+      { type: 'lights', title: 'आख़िरी बत्तियाँ', q: 'सारी बत्तियाँ बुझा दो।', n: 4, hint: 'पहली पंक्ति से शुरू करो।', fact: 'बत्तियाँ बुझाना हो गया!' },
+      { type: 'tapnum', title: 'भिन्नों की दौड़', q: 'मान के हिसाब से छोटे से बड़े क्रम में छुओ।', items: [{ t: '1/2', v: 0.5 }, { t: '0.4', v: 0.4 }, { t: '3/5', v: 0.6 }, { t: '1/3', v: 0.333 }, { t: '7/10', v: 0.7 }, { t: '0.45', v: 0.45 }, { t: '2/3', v: 0.667 }, { t: '0.3', v: 0.3 }, { t: '3/4', v: 0.75 }], hint: 'सबको दशमलव बनाओ।', fact: 'भिन्न और दशमलव एक ही संख्या के दो रूप हैं।' },
+      { type: 'choice', title: 'दो सिक्के', q: 'दो सिक्कों का जोड़ 15 रुपये है। उनमें से एक सिक्का 10 रुपये का नहीं है। दोनों सिक्के कौन-से हैं?', opts: [O('', '10 और 5', 1), O('', '7 और 8'), O('', '12 और 3'), O('', '9 और 6')], hint: '"एक" 10 का नहीं है, दूसरा हो सकता है।', fact: '10 का नहीं है केवल एक सिक्का, दूसरा 10 का हो सकता है।' }
+    ]
+  ];
+  function mergeFloor(arr, ex) {
+    var out = [], n = arr.length, m = ex.length, k = 0, i;
+    for (i = 0; i <= n; i++) {
+      while (k < m && Math.round(n * (k + 1) / (m + 1)) <= i) { out.push(ex[k++]); }
+      if (i < n) out.push(arr[i]);
+    }
+    while (k < m) out.push(ex[k++]);
+    return out;
+  }
+  WL.unshift([]);
+  WL = WL.map(function (arr, i) { return mergeFloor(arr, NEWL[i] || []); });
+
+  var L = [], WST = [], WCNT = [];
+  WL.forEach(function (arr, wi) {
+    WST.push(L.length + 1); WCNT.push(arr.length);
+    arr.forEach(function (lv) { lv.w = wi; L.push(lv); });
+  });
+
+  var KEY = 'dd-tower-v7';
+  var S = { bulbs: 5, stars: {}, open: 1, cur: 1, daily: { n: 0, last: '' }, sound: true };
+  var R = { screen: 'home', lensFn: null, hint: false, mist: 0, next: 0, locked: false, val: '', sel: [], opened: [], busy: false, matched: 0, miss: 0, run: 0, seq: [], exp: [], pos: 0, accept: false, t0: 0, par: 30 };
+
+  function $(id) { return document.getElementById(id); }
+  function load() {
+    try {
+      var j = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (j && typeof j.bulbs === 'number') {
+        S.bulbs = j.bulbs; S.stars = j.stars && typeof j.stars === 'object' ? j.stars : {};
+        S.open = Math.min(Math.max(j.open || 1, 1), L.length);
+        if (j.daily && typeof j.daily === 'object') S.daily = { n: Math.min(Math.max(j.daily.n | 0, 0), 7), last: String(j.daily.last || '') };
+        if (typeof j.sound === 'boolean') S.sound = j.sound;
+      }
+    } catch (e) { /* pehli vaar */ }
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* save na thay to chale */ } }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function shakeEl(el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+  function totalStars() { var t = 0; for (var k in S.stars) { t += S.stars[k]; } return t; }
+  function nextTarget() { for (var n = 1; n <= S.open; n++) { if (!S.stars[n]) return n; } return L.length; }
+  function hud() { $('bulbs').textContent = S.bulbs; $('starsTot').textContent = totalStars(); if ($('bulbsH')) $('bulbsH').textContent = S.bulbs; }
+
+  var toastT = null;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2000); }
+  function spend(n) {
+    if (S.bulbs < n) { toast('बल्ब कम हैं। मिशन पूरा करो तो बल्ब मिलेंगे।'); return false; }
+    S.bulbs -= n; hud(); save(); return true;
+  }
+  function setWorld(w) { $('sky').dataset.world = w; $('app').dataset.world = w; }
+
+  var sayT = null;
+  function say(msg, ok) {
+    var s = $('say'); s.textContent = msg; s.className = 'say' + (ok ? ' ok' : ''); s.hidden = false;
+    clearTimeout(sayT); sayT = setTimeout(function () { s.hidden = true; }, 2200);
+  }
+  function bot(cls) { var m = $('bot'); m.classList.remove('hop', 'nope'); void m.offsetWidth; m.classList.add(cls); }
+  function oops() {
+    R.mist++; snd('bad'); buzz(35);
+    say(pick(['गड़बड़! फिर से कोशिश करो।', 'लगभग! एक बार और सोचो।', 'सिग्नल ग़लत। दोबारा देखो।']));
+    bot('nope');
+  }
+
+  function screen(name) {
+    R.screen = name;
+    $('screenHome').hidden = name !== 'home';
+    $('screenPlay').hidden = name !== 'play';
+    $('screenMap').hidden = name !== 'map';
+    $('hud').hidden = name === 'home';
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- timer: 3 sitare mate samay ---------- */
+  var timer = null;
+  function parOf(lv) {
+    if (lv.par) return lv.par;
+    var t = lv.type;
+    if (t === 'choice') return 20 + lv.w * 4;
+    if (t === 'number') return 40 + lv.w * 10;
+    if (t === 'order') return 25 + lv.w * 3;
+    if (t === 'multi') return 30 + lv.w * 5;
+    if (t === 'pairs') return 12 + lv.cards.length * 9;
+    if (t === 'simon') return 14 + lv.len * 6;
+    if (t === 'odd') return 15 + lv.n * 3;
+    if (t === 'find') return 50;
+    if (t === 'sort') return 30 + lv.k * 12;
+    if (t === 'lights') return 20 + lv.n * 10;
+    if (t === 'slide') return 20 + Math.round(lv.steps * 1.5);
+    if (t === 'tapnum') return 10 + (lv.items ? lv.items.length : lv.n) * 3;
+    if (t === 'pop') return 12 + lv.n * 3;
+    if (t === 'glyph') return 20 + lv.n * 6;
+    if (t === 'race') return 40;
+    return 40;
+  }
+  function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+  function tickTimer() {
+    var el = (Date.now() - R.t0) / 1000, left = R.par - el;
+    $('parfill').style.width = Math.max(0, left / R.par * 100) + '%';
+    var p = $('par');
+    if (left > 0) { $('parlbl').textContent = '3★ के लिए ' + Math.ceil(left) + ' सेकंड'; p.classList.remove('late'); }
+    else { $('parlbl').textContent = 'समय ' + Math.floor(el) + ' सेकंड'; p.classList.add('late'); }
+  }
+  function startTimer(lv) {
+    stopTimer();
+    R.t0 = Date.now(); R.par = parOf(lv);
+    tickTimer();
+    timer = setInterval(tickTimer, 250);
+  }
+
+  /* ---------- art ---------- */
+  function itemArt(it) {
+    var d = document.createElement('div');
+    d.className = 'art';
+    if (it.e) d.innerHTML = ico(it.e);
+    else {
+      d.className = 'art txtart'; d.textContent = it.n || '';
+      var len = (it.n || '').length;
+      if (len > 4) d.style.fontSize = '26px'; else if (len > 3) d.style.fontSize = '32px';
+    }
+    return d;
+  }
+  function artEl(a) {
+    var d = document.createElement('div');
+    if (typeof a === 'string') { d.className = 'art series'; d.textContent = a; return d; }
+    d.className = 'eqs';
+    a.forEach(function (row) {
+      var r = document.createElement('div'); r.className = 'eq';
+      row.forEach(function (tok) {
+        if (tok.charAt(0) === '#') { var s = document.createElement('span'); s.className = 'ei'; s.innerHTML = ico(tok.slice(1)); r.appendChild(s); }
+        else { var t = document.createElement('span'); t.className = 'et'; t.textContent = tok; r.appendChild(t); }
+      });
+      d.appendChild(r);
+    });
+    return d;
+  }
+  function visual(lv) {
+    var d = document.createElement('div'); d.className = 'vis';
+    if (lv.visual === 'stroop') {
+      var s = document.createElement('span'); s.className = 'word'; s.style.color = lv.ink; s.textContent = lv.word; d.appendChild(s);
+    } else if (lv.visual === 'ebb') {
+      var out = '<svg viewBox="0 0 260 130" role="img" aria-label="दो नारंगी गोले"><g stroke="#0B0E22" stroke-width="2.5">', i, a;
+      for (i = 0; i < 6; i++) { a = i * Math.PI / 3; out += '<circle cx="' + (70 + 44 * Math.cos(a)).toFixed(1) + '" cy="' + (65 + 44 * Math.sin(a)).toFixed(1) + '" r="19" fill="#6C7DDB"/>'; }
+      for (i = 0; i < 6; i++) { a = i * Math.PI / 3; out += '<circle cx="' + (190 + 28 * Math.cos(a)).toFixed(1) + '" cy="' + (65 + 28 * Math.sin(a)).toFixed(1) + '" r="7" fill="#6C7DDB"/>'; }
+      out += '<circle cx="70" cy="65" r="16" fill="#FFB938"/><circle cx="190" cy="65" r="16" fill="#FFB938"/></g></svg>';
+      d.innerHTML = out;
+    }
+    return d;
+  }
+
+  /* ---------- level ---------- */
+  function startLevel(n) {
+    S.cur = n; save();
+    R.hint = false; R.mist = 0;
+    render();
+  }
+
+  function render() {
+    var n = S.cur, lv = L[n - 1];
+    R.run++;
+    R.next = 0; R.locked = false; R.val = ''; R.sel = []; R.opened = []; R.busy = false; R.matched = 0; R.miss = 0; R.accept = false; R.pos = 0;
+    screen('play');
+    setWorld(lv.w);
+    R.lensFn = null;
+    $('lvName').textContent = '№ ' + n;
+    $('lvNo').textContent = '';
+    $('tag').textContent = 'मिशन ' + n;
+    $('kind').textContent = KIND[lv.type] || '';
+    $('title').textContent = lv.title;
+    $('q').textContent = lv.q || '';
+    $('say').hidden = true;
+    $('hintbox').hidden = !R.hint;
+    $('hinttext').textContent = lv.hint;
+    var st = $('stage'); st.textContent = '';
+    if (lv.visual) st.appendChild(visual(lv));
+    if (lv.art) st.appendChild(artEl(lv.art));
+    if (lv.type === 'choice') drawChoice(lv, st);
+    else if (lv.type === 'order') drawOrder(lv, st);
+    else if (lv.type === 'multi') drawMulti(lv, st);
+    else if (lv.type === 'pairs') drawPairs(lv, st);
+    else if (lv.type === 'simon') drawSimon(lv, st);
+    else if (lv.type === 'odd') drawOdd(lv, st);
+    else if (lv.type === 'find') drawFind(lv, st);
+    else if (lv.type === 'glyph') drawGlyph(lv, st);
+    else if (lv.type === 'race') drawRace(lv, st);
+    else if (lv.type === 'sort') drawSort(lv, st);
+    else if (lv.type === 'lights') drawLights(lv, st);
+    else if (lv.type === 'slide') drawSlide(lv, st);
+    else if (lv.type === 'tapnum') drawTapnum(lv, st);
+    else if (lv.type === 'pop') drawPop(lv, st);
+    else drawNumber(lv, st);
+    hud();
+    if (lv.type === 'simon') startTimerAfterShow(lv); else startTimer(lv);
+  }
+  /* simon ma pehla dikhava, pachhi samay chalu */
+  function startTimerAfterShow(lv) { stopTimer(); R.par = parOf(lv); R.t0 = Date.now(); $('parfill').style.width = '100%'; $('parlbl').textContent = '3★ का समय चुनने के बाद शुरू'; $('par').classList.remove('late'); }
+
+  /* choice */
+  function drawChoice(lv, st) {
+    var g = document.createElement('div'); g.className = 'choices';
+    lv.opts.forEach(function (o) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'card' + (o.e ? '' : ' txt') + (o.small ? ' small' : '');
+      if (o.e) { var e = document.createElement('span'); e.className = 'ci'; e.innerHTML = ico(o.e); b.appendChild(e); }
+      if (o.t) { var l = document.createElement('span'); l.className = 'lab'; l.textContent = o.t; if (o.fs) l.style.fontSize = o.fs + 'px'; b.appendChild(l); }
+      b.setAttribute('aria-label', o.t || 'विकल्प');
+      b.addEventListener('click', function () {
+        if (R.locked) return;
+        if (o.ok) { R.locked = true; b.classList.add('right'); snd('ok'); setTimeout(win, 380); }
+        else { b.classList.add('wrong'); b.disabled = true; shakeEl(b); oops(); }
+      });
+      g.appendChild(b);
+    });
+    st.appendChild(g);
+  }
+
+  /* odd one out */
+  function drawOdd(lv, st) {
+    var n = lv.n, total = n * n, oddI = Math.floor(Math.random() * total);
+    var g = document.createElement('div'); g.className = 'oddg'; g.style.gridTemplateColumns = 'repeat(' + n + ', minmax(0, 1fr))';
+    for (var i = 0; i < total; i++) {
+      (function (i) {
+        var b = document.createElement('button'), isOdd = i === oddI;
+        b.type = 'button'; b.className = 'oc'; b.setAttribute('aria-label', 'गोला ' + (i + 1));
+        b.innerHTML = ico(isOdd && lv.b ? lv.b : lv.a);
+        if (isOdd && lv.f) b.firstChild.style.filter = lv.f;
+        b.addEventListener('click', function () {
+          if (R.locked) return;
+          if (isOdd) { R.locked = true; b.classList.add('right'); setTimeout(win, 380); }
+          else { b.classList.add('wrong'); b.disabled = true; shakeEl(b); oops(); }
+        });
+        g.appendChild(b);
+      })(i);
+    }
+    st.appendChild(g);
+  }
+
+  /* order */
+  function drawOrder(lv, st) {
+    var wrap = document.createElement('div'); wrap.className = 'items'; wrap.id = 'items';
+    var list = lv.items.map(function (it, k) { return { it: it, k: k }; });
+    var tries = 0;
+    do { shuffle(list); tries++; } while (tries < 8 && list.every(function (x, i) { return x.k === i; }));
+    list.forEach(function (x) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'it'; b.dataset.k = x.k;
+      b.appendChild(itemArt(x.it));
+      if (x.it.t) { var l = document.createElement('span'); l.className = 'lab'; l.textContent = x.it.t; b.appendChild(l); }
+      b.addEventListener('click', function () {
+        if (R.locked || b.classList.contains('done')) return;
+        if (x.k === R.next) {
+          b.classList.add('done');
+          var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = R.next + 1; b.appendChild(bd);
+          R.next++;
+          if (R.next === lv.items.length) { R.locked = true; setTimeout(win, 420); }
+        } else {
+          R.locked = true; shakeEl(wrap); oops();
+          setTimeout(function () {
+            var all = wrap.children;
+            for (var i = 0; i < all.length; i++) {
+              all[i].classList.remove('done');
+              var bd2 = all[i].querySelector('.badge'); if (bd2) all[i].removeChild(bd2);
+            }
+            R.next = 0; R.locked = false;
+          }, 450);
+        }
+      });
+      wrap.appendChild(b);
+    });
+    st.appendChild(wrap);
+  }
+
+  /* multi (sahi chizen ya jod) */
+  function drawMulti(lv, st) {
+    var sumEl = null;
+    if (lv.sumTo) {
+      sumEl = document.createElement('div'); sumEl.className = 'sumline';
+      sumEl.innerHTML = 'अभी का जोड़: <b id="sumv">0</b> / ' + lv.sumTo;
+      st.appendChild(sumEl);
+    }
+    var wrap = document.createElement('div'); wrap.className = 'items'; wrap.id = 'items';
+    function curSum() { var s = 0; R.sel.forEach(function (k) { s += parseInt(lv.items[k].n, 10) || 0; }); return s; }
+    function upd() {
+      if (!sumEl) return;
+      var s = curSum(); $('sumv').textContent = s;
+      sumEl.classList.toggle('hit', s === lv.sumTo);
+    }
+    lv.items.forEach(function (it, k) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'it'; b.dataset.k = k;
+      b.appendChild(itemArt(it));
+      if (it.t) { var l = document.createElement('span'); l.className = 'lab'; l.textContent = it.t; b.appendChild(l); }
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', function () {
+        if (R.locked) return;
+        var i = R.sel.indexOf(k);
+        if (i >= 0) { R.sel.splice(i, 1); b.classList.remove('on'); b.setAttribute('aria-pressed', 'false'); }
+        else { R.sel.push(k); b.classList.add('on'); b.setAttribute('aria-pressed', 'true'); }
+        upd();
+      });
+      wrap.appendChild(b);
+    });
+    st.appendChild(wrap);
+    var go = document.createElement('button');
+    go.type = 'button'; go.className = 'gobtn'; go.textContent = 'जाँचो';
+    go.addEventListener('click', function () {
+      if (R.locked) return;
+      var good;
+      if (lv.sumTo) { good = R.sel.length >= 2 && curSum() === lv.sumTo; }
+      else {
+        var want = [];
+        lv.items.forEach(function (it, k) { if (it.ok) want.push(k); });
+        var got = R.sel.slice().sort(function (a, b) { return a - b; });
+        good = got.length === want.length && got.every(function (v, i) { return v === want[i]; });
+      }
+      if (good) { R.locked = true; setTimeout(win, 250); }
+      else {
+        shakeEl(wrap); oops();
+        R.sel = [];
+        var all = wrap.children;
+        for (var i = 0; i < all.length; i++) { all[i].classList.remove('on'); all[i].setAttribute('aria-pressed', 'false'); }
+        upd();
+      }
+    });
+    st.appendChild(go);
+  }
+
+  /* pairs */
+  function drawPairs(lv, st) {
+    var cards = shuffle(lv.cards.concat(lv.cards));
+    var g = document.createElement('div'); g.className = 'pairs';
+    g.style.gridTemplateColumns = 'repeat(' + (cards.length === 6 ? 3 : 4) + ', minmax(0, 1fr))';
+    cards.forEach(function (v) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'pc'; b.dataset.v = v;
+      b.setAttribute('aria-label', 'कार्ड');
+      var bk = document.createElement('span'); bk.className = 'back'; bk.textContent = '?';
+      var fc = document.createElement('span'); fc.className = 'face'; fc.innerHTML = ico(v);
+      b.appendChild(bk); b.appendChild(fc);
+      b.addEventListener('click', function () {
+        if (R.locked || R.busy || b.classList.contains('open') || b.classList.contains('matched')) return;
+        b.classList.add('open'); R.opened.push(b);
+        if (R.opened.length < 2) return;
+        var a = R.opened[0], c = R.opened[1];
+        if (a.dataset.v === c.dataset.v) {
+          a.classList.remove('open'); c.classList.remove('open');
+          a.classList.add('matched'); c.classList.add('matched');
+          R.opened = []; R.matched++;
+          say('वाह! जोड़ी मिल गई।', true); bot('hop');
+          if (R.matched === lv.cards.length) { R.locked = true; setTimeout(win, 600); }
+        } else {
+          R.busy = true; R.miss++;
+          setTimeout(function () { a.classList.remove('open'); c.classList.remove('open'); R.opened = []; R.busy = false; }, 750);
+        }
+      });
+      g.appendChild(b);
+    });
+    st.appendChild(g);
+  }
+
+  /* simon (sidho ya ulto) */
+  function drawSimon(lv, st) {
+    var cols = ['#FF5468', '#46A0FF', '#4BE08A', '#FFC83D'], names = ['लाल', 'नीला', 'हरा', 'पीला'];
+    var g = document.createElement('div'); g.className = 'simon'; g.id = 'simon';
+    cols.forEach(function (c, i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'sp'; b.style.setProperty('--c', c); b.disabled = true;
+      b.setAttribute('aria-label', names[i]);
+      b.addEventListener('click', function () { tapSimon(lv, i, b); });
+      g.appendChild(b);
+    });
+    st.appendChild(g);
+    var s = document.createElement('p'); s.className = 'memstatus'; s.id = 'mstat'; s.setAttribute('aria-live', 'polite'); st.appendChild(s);
+    R.seq = [];
+    var last = -1;
+    for (var i = 0; i < lv.len; i++) { var r; do { r = Math.floor(Math.random() * 4); } while (r === last && Math.random() < 0.7); R.seq.push(r); last = r; }
+    R.exp = lv.rev ? R.seq.slice().reverse() : R.seq.slice();
+    playSimon(lv);
+  }
+  function mstat(t) { var e = $('mstat'); if (e) e.textContent = t; }
+  async function playSimon(lv) {
+    var run = R.run;
+    R.accept = false; R.pos = 0;
+    var g = $('simon'); if (!g) return;
+    g.classList.remove('go');
+    var btns = g.children, i;
+    for (i = 0; i < btns.length; i++) btns[i].disabled = true;
+    mstat('ध्यान से देखो...');
+    await sleep(800);
+    for (var n = 0; n < R.seq.length; n++) {
+      if (run !== R.run) return;
+      var b = btns[R.seq[n]];
+      b.classList.add('lit');
+      await sleep(520);
+      b.classList.remove('lit');
+      await sleep(260);
+    }
+    if (run !== R.run) return;
+    for (i = 0; i < btns.length; i++) btns[i].disabled = false;
+    g.classList.add('go');
+    R.accept = true;
+    mstat(lv.rev ? 'अब उल्टे क्रम में छुओ!' : 'अब तुम्हारी बारी!');
+    if (R.pos === 0 && !timer) { R.t0 = Date.now(); R.par = parOf(lv); tickTimer(); timer = setInterval(tickTimer, 250); }
+  }
+  function tapSimon(lv, i, b) {
+    if (!R.accept) return;
+    b.classList.add('lit'); setTimeout(function () { b.classList.remove('lit'); }, 200);
+    if (i === R.exp[R.pos]) {
+      R.pos++;
+      if (R.pos === R.exp.length) { R.accept = false; R.locked = true; mstat('वाह!'); setTimeout(win, 600); }
+    } else {
+      R.accept = false; oops(); mstat('क्रम गड़बड़ हो गया। फिर से देखो।');
+      var run = R.run;
+      setTimeout(function () { if (run === R.run) playSimon(lv); }, 1000);
+    }
+  }
+
+  /* number */
+  function drawNumber(lv, st) {
+    var box = document.createElement('div'); box.className = 'numbox empty'; box.id = 'numbox'; box.textContent = '?';
+    st.appendChild(box);
+    var keys = document.createElement('div'); keys.className = 'keys';
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', '✓'].forEach(function (k) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'key' + (k === '✓' ? ' ok' : ''); b.textContent = k;
+      b.setAttribute('aria-label', k === '⌫' ? 'मिटाओ' : k === '✓' ? 'जवाब जाँचो' : k);
+      b.addEventListener('click', function () { keyPress(k); });
+      keys.appendChild(b);
+    });
+    st.appendChild(keys);
+  }
+  function showNum() {
+    var box = $('numbox'); if (!box) return;
+    box.textContent = R.val === '' ? '?' : R.val;
+    box.classList.toggle('empty', R.val === '');
+  }
+  function keyPress(k) {
+    var lv = L[S.cur - 1];
+    if (lv.type !== 'number' || R.locked) return;
+    if (k === '⌫') { R.val = R.val.slice(0, -1); showNum(); return; }
+    if (k === '✓') {
+      if (R.val === '') return;
+      if (parseInt(R.val, 10) === lv.ans) { R.locked = true; setTimeout(win, 250); }
+      else { shakeEl($('numbox')); oops(); R.val = ''; showNum(); }
+      return;
+    }
+    if (R.val.length < 5) { R.val += k; showNum(); }
+  }
+  document.addEventListener('keydown', function (e) {
+    if (R.screen !== 'play' || !$('pop').hidden) return;
+    if (/^[0-9]$/.test(e.key)) keyPress(e.key);
+    else if (e.key === 'Backspace') keyPress('⌫');
+    else if (e.key === 'Enter') keyPress('✓');
+  });
+
+  /* ---------- jeet ---------- */
+  function calcStars(lv, el) {
+    var m = lv.type === 'pairs' ? Math.max(0, R.miss - lv.cards.length) : R.mist;
+    m += R.hint ? 1 : 0;
+    if (m === 0 && el <= R.par) return 3;
+    return m <= 1 ? 2 : 1;
+  }
+
+  function confetti() {
+    var host = $('confetti'); host.textContent = '';
+    var cols = ['#2EE6D6', '#FF4FA3', '#FFC83D', '#B6F23A', '#A78BFF', '#FF8A3D'];
+    for (var i = 0; i < 34; i++) {
+      var p = document.createElement('i');
+      p.style.setProperty('--x', (Math.random() * 100).toFixed(1) + '%');
+      p.style.setProperty('--c', cols[i % cols.length]);
+      p.style.setProperty('--r', Math.floor(Math.random() * 360) + 'deg');
+      p.style.setProperty('--d', (1.4 + Math.random() * 1.2).toFixed(2) + 's');
+      p.style.animationDelay = (Math.random() * 0.4).toFixed(2) + 's';
+      host.appendChild(p);
+    }
+    setTimeout(function () { host.textContent = ''; }, 3200);
+  }
+
+  function win() {
+    var n = S.cur, lv = L[n - 1];
+    snd('win');
+    var el = (Date.now() - R.t0) / 1000;
+    stopTimer();
+    var st = calcStars(lv, el), prev = S.stars[n] || 0, gain = 0;
+    if (!prev) { gain = st === 3 ? 2 : 1; S.bulbs += gain; }
+    if (st > prev) S.stars[n] = st;
+    S.open = Math.min(Math.max(S.open, n + 1), L.length);
+    save(); hud();
+    $('popTitle').textContent = pick(['मिशन पूरा!', 'शाबाश!', 'एकदम सही!', 'कमाल!']);
+    var ps = $('popStars'); ps.textContent = '';
+    for (var i = 1; i <= 3; i++) {
+      var ns = 'http://www.w3.org/2000/svg';
+      var svg = document.createElementNS(ns, 'svg'); if (i <= st) svg.setAttribute('class', 'on');
+      var use = document.createElementNS(ns, 'use'); use.setAttribute('href', '#i-star');
+      svg.appendChild(use); ps.appendChild(svg);
+    }
+    $('popTime').textContent = 'समय: ' + Math.round(el) + ' सेकंड' + (st < 3 ? ' · 3★ के लिए बिना ग़लती और ' + R.par + ' सेकंड के अंदर' : '');
+    $('popGain').hidden = !gain;
+    $('popGainTxt').textContent = '+' + gain + ' बल्ब';
+    $('popFact').textContent = lv.fact || '';
+    $('popNext').textContent = n >= L.length ? 'टावर देखो' : 'अगला मिशन';
+    $('pop').hidden = false;
+    confetti();
+    $('popNext').focus({ preventScroll: true });
+  }
+
+  $('popNext').addEventListener('click', function () {
+    $('pop').hidden = true;
+    if (S.cur >= L.length) showMap(); else startLevel(S.cur + 1);
+  });
+
+  /* ---------- buttons ---------- */
+  $('btnHint').addEventListener('click', function () {
+    if (R.locked) return;
+    if (!R.hint) { if (!spend(1)) return; R.hint = true; }
+    $('hintbox').hidden = false;
+    if (R.lensFn) R.lensFn();
+  });
+  $('btnSkip').addEventListener('click', function () {
+    if (R.locked) return;
+    if (!spend(3)) return;
+    S.open = Math.min(Math.max(S.open, S.cur + 1), L.length);
+    save();
+    if (S.cur >= L.length) showMap(); else startLevel(S.cur + 1);
+  });
+  $('btnMap').addEventListener('click', function () {
+    $('pop').hidden = true;
+    R.run++;
+    if (R.screen === 'map') showHome(); else showMap();
+  });
+  $('btnPlay').addEventListener('click', function () { startLevel(nextTarget()); });
+
+  /* ---------- tower ---------- */
+  function showMap() {
+    stopTimer();
+    var cur = nextTarget();
+    setWorld(L[cur - 1].w);
+    $('lvName').textContent = 'लेवल';
+    $('lvNo').textContent = '';
+    var host = $('worlds'); host.textContent = '';
+    var curTile = null;
+    for (var wi = W.length - 1; wi >= 0; wi--) {
+      (function (wi) {
+        var cnt = WCNT[wi], got = 0, k;
+        for (k = 0; k < cnt; k++) got += S.stars[WST[wi] + k] || 0;
+        var sec = document.createElement('section'); sec.className = 'floor'; sec.dataset.world = wi;
+        var fh = document.createElement('div'); fh.className = 'fh';
+        var num = document.createElement('span'); num.className = 'fnum'; num.textContent = '0' + (wi + 1);
+        var fd = document.createElement('span'); fd.className = 'fd'; fd.textContent = W[wi].d;
+        var b = document.createElement('b'); b.textContent = 'मंज़िल ' + (wi + 1) + ' · ' + W[wi].n;
+        var sm = document.createElement('small'); sm.textContent = got + ' / ' + (cnt * 3) + ' सितारे';
+        fh.appendChild(fd); fh.appendChild(b); fh.appendChild(sm);
+        sec.appendChild(num); sec.appendChild(fh);
+        var tiles = document.createElement('div'); tiles.className = 'tiles';
+        for (var i = 0; i < cnt; i++) {
+          (function (n) {
+            var t = document.createElement('button'); t.type = 'button';
+            var stars = S.stars[n] || 0, locked = n > S.open, isNow = n === cur;
+            t.className = 'tile' + (stars ? ' done' : '') + (isNow ? ' now' : '') + (locked ? ' locked' : '');
+            t.disabled = locked;
+            t.setAttribute('aria-label', 'मिशन ' + n + (stars ? ', ' + stars + ' सितारे' : locked ? ', बंद' : ''));
+            if (locked) { var lk = document.createElement('span'); lk.className = 'nl'; lk.innerHTML = ico('lock'); t.appendChild(lk); }
+            else {
+              var tx = document.createElement('span'); tx.textContent = String(n); t.appendChild(tx);
+              if (stars) {
+                var ds = document.createElement('span'); ds.className = 'dots';
+                for (var d = 1; d <= 3; d++) { var di = document.createElement('i'); if (d <= stars) di.className = 'on'; ds.appendChild(di); }
+                t.appendChild(ds);
+              }
+            }
+            if (isNow) curTile = t;
+            t.addEventListener('click', function () { startLevel(n); });
+            tiles.appendChild(t);
+          })(WST[wi] + i);
+        }
+        sec.appendChild(tiles);
+        host.appendChild(sec);
+      })(wi);
+    }
+    $('btnPlay').textContent = S.open > 1 ? '▶ खेलते रहो · मिशन ' + cur : '▶ खेलो';
+    screen('map');
+    hud();
+    if (curTile) { try { curTile.scrollIntoView({ block: 'center' }); } catch (e) { /* scroll na thay to chale */ } }
+  }
+
+  /* ================= v6: home, rank, daily bonus ================= */
+  var RANKS = ['विद्यार्थी', 'जिज्ञासु', 'खोजी', 'जासूस', 'शिक्षक', 'विद्वान', 'पंडित', 'जीनियस'];
+  var RANK_AT = [0, 0.06, 0.15, 0.27, 0.4, 0.55, 0.72, 0.9].map(function (f) { return Math.round(f * L.length); });
+  var BONUS = [1, 2, 2, 2, 2, 2, 5];
+  var autoShown = false;
+  function doneCount() { var c = 0; for (var k in S.stars) { if (S.stars[k]) c++; } return c; }
+  function dayNo(s) { var p = String(s).split('-'); return p.length === 3 ? Math.floor(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000) : -99999; }
+  function todayStr() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function bonusInfo() {
+    var D = S.daily;
+    if (!D.last) return { day: 0, can: true };
+    var diff = dayNo(todayStr()) - dayNo(D.last);
+    if (diff <= 0) return { day: D.n, can: false };
+    if (diff === 1 && D.n < 7) return { day: D.n, can: true };
+    return { day: 0, can: true };
+  }
+  function bonusDot() { $('bonusDot').hidden = !bonusInfo().can; }
+  function showHome() {
+    stopTimer(); R.run++;
+    var c = doneCount(), r = 0, i;
+    for (i = 0; i < RANK_AT.length; i++) { if (c >= RANK_AT[i]) r = i; }
+    setWorld(0);
+    $('rankLv').textContent = 'स्तर ' + (r + 1);
+    $('rankName').textContent = RANKS[r];
+    $('upg').textContent = r < RANKS.length - 1 ? 'अगले स्तर के लिए ' + (RANK_AT[r + 1] - c) + ' और लेवल पूरे करो' : 'तुम सबसे ऊँचे स्तर पर हो!';
+    $('btnStart').setAttribute('aria-label', c ? 'खेलते रहो' : 'खेलो');
+    screen('home'); hud(); bonusDot();
+    if (!autoShown && bonusInfo().can) { autoShown = true; openBonus(); }
+  }
+  function openBonus() {
+    var info = bonusInfo(), g = $('dgrid'); g.textContent = '';
+    for (var i = 0; i < 7; i++) {
+      var d = document.createElement('div');
+      d.className = 'dcell' + (i === 6 ? ' big' : '') + (i < info.day ? ' done' : '') + (i === info.day && info.can ? ' today' : '') + (i > info.day || (i === info.day && !info.can) ? ' lock' : '');
+      d.innerHTML = '<svg><use href="#' + (i === 6 ? 'i-gift' : 'i-bulb') + '"/></svg><b>+' + BONUS[i] + '</b><small>दिन ' + (i + 1) + '</small>';
+      g.appendChild(d);
+    }
+    $('dClaim').hidden = !info.can;
+    $('dpop').hidden = false;
+  }
+  $('btnBonus').addEventListener('click', openBonus);
+  $('dClose').addEventListener('click', function () { $('dpop').hidden = true; });
+  $('dClaim').addEventListener('click', function () {
+    var info = bonusInfo(); if (!info.can) return;
+    var add = BONUS[info.day];
+    S.bulbs += add; S.daily = { n: info.day + 1, last: todayStr() };
+    save(); hud(); bonusDot(); toast('+' + add + ' बल्ब मिले!');
+    openBonus();
+  });
+  var resetArmed = false;
+  $('btnGear').addEventListener('click', function () { resetArmed = false; $('sReset').textContent = 'नए सिरे से शुरू करो'; $('spop').hidden = false; });
+  $('sClose').addEventListener('click', function () { $('spop').hidden = true; });
+  $('sReset').addEventListener('click', function () {
+    if (!resetArmed) { resetArmed = true; $('sReset').textContent = 'पक्का? सारी प्रगति मिट जाएगी'; return; }
+    S.bulbs = 5; S.stars = {}; S.open = 1; S.cur = 1; S.daily = { n: 0, last: '' };
+    save(); $('spop').hidden = true; autoShown = false; showHome();
+  });
+  $('btnStart').addEventListener('click', function () { startLevel(nextTarget()); });
+  $('btnTasks').addEventListener('click', function () { showMap(); });
+  $('btnRetry').addEventListener('click', function () { if (R.locked) return; R.hint = R.hint; startLevel(S.cur); });
+
+  /* ================= v6: nava prakar - chhupi chizen, chinh, daud ================= */
+  var SCN = {
+    room: {
+      bg: '<rect width="320" height="240" fill="#F2D2AE"/><path d="M0 0h320v22L246 66H74L0 22z" fill="#A5633A"/><path d="M0 22L74 66M320 22L246 66" stroke="#7B4526" stroke-width="6"/>' +
+        '<rect x="10" y="70" width="46" height="106" rx="3" fill="#C98F5B"/><path d="M10 104h46M10 140h46" stroke="#8A5A33" stroke-width="3"/>' +
+        '<rect x="14" y="78" width="7" height="24" fill="#E5484D"/><rect x="23" y="82" width="7" height="20" fill="#3E8EDE"/><rect x="32" y="76" width="7" height="26" fill="#58B947"/><rect x="41" y="84" width="9" height="18" fill="#FFC83D"/>' +
+        '<rect x="14" y="112" width="8" height="24" fill="#8E5BE0"/><rect x="24" y="116" width="7" height="20" fill="#E5484D"/><rect x="33" y="110" width="9" height="26" fill="#3E8EDE"/>' +
+        '<rect x="130" y="76" width="56" height="44" rx="4" fill="#8FD7F5" stroke="#fff" stroke-width="5"/><path d="M158 76v44M130 98h56" stroke="#fff" stroke-width="3"/>' +
+        '<path d="M0 176h320v64H0z" fill="#7B5A68"/><path d="M96 208h128l10 22H86z" fill="#F0B54A"/><path d="M106 216h108M98 224h124" stroke="#fff" stroke-width="3" opacity=".7"/>' +
+        '<rect x="64" y="124" width="106" height="52" rx="12" fill="#26A69A"/><rect x="54" y="134" width="24" height="44" rx="9" fill="#1E8E84"/><rect x="156" y="134" width="24" height="44" rx="9" fill="#1E8E84"/><rect x="82" y="116" width="70" height="26" rx="10" fill="#33BDB0"/>' +
+        '<rect x="198" y="136" width="46" height="42" rx="4" fill="#D79A5B"/><path d="M198 152h46" stroke="#A8693A" stroke-width="3"/>' +
+        '<rect x="250" y="150" width="56" height="26" rx="6" fill="#4FC3F7"/>',
+      objs: [
+        { id: 'o-clock', t: 'घड़ी', x: 226, y: 74, s: 34 },
+        { id: 'o-mug', t: 'कप', x: 206, y: 106, s: 30 },
+        { id: 'o-books', t: 'किताबें', x: 14, y: 142, s: 32 },
+        { id: 'o-plant', t: 'गमला', x: 262, y: 118, s: 46 },
+        { id: 'o-key', t: 'चाबी', x: 146, y: 198, s: 28 }
+      ]
+    },
+    garden: {
+      bg: '<rect width="320" height="240" fill="#9EE0FF"/><circle cx="44" cy="40" r="22" fill="#FFD84D"/><ellipse cx="116" cy="40" rx="32" ry="12" fill="#fff"/><ellipse cx="136" cy="32" rx="20" ry="10" fill="#fff"/><ellipse cx="250" cy="22" rx="26" ry="9" fill="#fff"/>' +
+        '<path d="M0 138Q80 100 160 128T320 118V240H0z" fill="#6CCB5F"/><rect y="176" width="320" height="64" fill="#4DB04A"/>' +
+        '<rect x="226" y="84" width="18" height="92" fill="#8D5A2B"/><circle cx="235" cy="66" r="44" fill="#2E9E4E"/><circle cx="204" cy="88" r="28" fill="#37AE58"/><circle cx="268" cy="86" r="26" fill="#37AE58"/>' +
+        '<ellipse cx="100" cy="200" rx="64" ry="24" fill="#3DA5E8"/><path d="M60 196q10-5 20 0M110 206q10-5 20 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".8"/>' +
+        '<g fill="#fff" stroke="#E2D6B5" stroke-width="2"><rect x="8" y="140" width="8" height="34"/><rect x="48" y="140" width="8" height="34"/><rect x="88" y="140" width="8" height="34"/><rect x="2" y="148" width="100" height="6"/><rect x="2" y="162" width="100" height="6"/></g>' +
+        '<circle cx="190" cy="150" r="5" fill="#FF5E8A"/><circle cx="170" cy="162" r="5" fill="#FFD23F"/><circle cx="300" cy="150" r="5" fill="#FF5E8A"/>',
+      objs: [
+        { id: 'o-bird', t: 'पक्षी', x: 210, y: 36, s: 30 },
+        { id: 'o-kite', t: 'पतंग', x: 140, y: 12, s: 36 },
+        { id: 'o-fish', t: 'मछली', x: 76, y: 186, s: 32 },
+        { id: 'o-plant', t: 'पौधा', x: 20, y: 112, s: 36 },
+        { id: 'o-key', t: 'चाबी', x: 268, y: 196, s: 28 }
+      ]
+    }
+  };
+  var missCnt = 0;
+  function softMiss(msg) {
+    missCnt++;
+    say(msg || 'वहाँ कुछ नहीं है। और ध्यान से देखो!');
+    if (missCnt % 3 === 0) R.mist++;
+  }
+
+  function drawFind(lv, st) {
+    var sc = SCN[lv.scene], found = 0, done = [];
+    missCnt = 0;
+    var tr = document.createElement('div'); tr.className = 'targets';
+    var tgs = sc.objs.map(function (o) {
+      var d = document.createElement('div'); d.className = 'tg'; d.setAttribute('aria-label', o.t);
+      d.innerHTML = '<svg viewBox="0 0 40 40"><use href="#' + o.id + '"/></svg>'; tr.appendChild(d); return d;
+    });
+    st.appendChild(tr);
+    var objs = '';
+    sc.objs.forEach(function (o, i) {
+      objs += '<g class="ob" data-k="' + i + '" role="button" aria-label="' + o.t + '"><use href="#' + o.id + '" x="' + o.x + '" y="' + o.y + '" width="' + o.s + '" height="' + o.s + '"/><rect x="' + (o.x - 6) + '" y="' + (o.y - 6) + '" width="' + (o.s + 12) + '" height="' + (o.s + 12) + '" fill="transparent"/></g>';
+    });
+    var host = document.createElement('div'); host.style.width = '100%'; host.style.maxWidth = '380px';
+    host.innerHTML = '<svg class="scene" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">' + sc.bg + objs + '<g class="marks"></g></svg>';
+    var svg = host.firstChild, marks = svg.querySelector('.marks');
+    svg.addEventListener('click', function (e) {
+      if (R.locked) return;
+      var g = e.target.closest ? e.target.closest('.ob') : null;
+      if (!g) { softMiss(); return; }
+      var k = +g.getAttribute('data-k');
+      if (done[k]) return;
+      done[k] = true; found++;
+      var o = sc.objs[k];
+      tgs[k].classList.add('got');
+      var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('class', 'ring'); c.setAttribute('cx', o.x + o.s / 2); c.setAttribute('cy', o.y + o.s / 2); c.setAttribute('r', o.s * 0.62);
+      marks.appendChild(c);
+      var old = marks.querySelector('.lens'); if (old) old.remove();
+      if (found >= sc.objs.length) { R.locked = true; setTimeout(win, 450); }
+    });
+    st.appendChild(host);
+    R.lensFn = function () {
+      var old = marks.querySelector('.lens'); if (old) old.remove();
+      for (var k = 0; k < sc.objs.length; k++) {
+        if (!done[k]) {
+          var o = sc.objs[k], c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          c.setAttribute('class', 'lens'); c.setAttribute('cx', o.x + o.s / 2); c.setAttribute('cy', o.y + o.s / 2); c.setAttribute('r', o.s * 0.8);
+          marks.appendChild(c); return;
+        }
+      }
+    };
+  }
+
+  function drawGlyph(lv, st) {
+    var cols = 7, cells = [], i;
+    for (i = 0; i < cols * cols; i++) cells.push(i);
+    shuffle(cells);
+    var use = cells.slice(0, lv.total), found = 0, btns = [];
+    var info = document.createElement('p'); info.className = 'sumline'; info.innerHTML = 'ढूँढने हैं: <b>' + lv.target + '</b> × ' + lv.n;
+    st.appendChild(info);
+    var wrap = document.createElement('div'); wrap.className = 'glwrap';
+    use.forEach(function (c, idx) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'gl';
+      var isT = idx < lv.n;
+      b.textContent = isT ? lv.target : pick(lv.pool);
+      var cx = (c % cols + 0.5 + (Math.random() - 0.5) * 0.14) / cols * 100, cy = (Math.floor(c / cols) + 0.5 + (Math.random() - 0.5) * 0.14) / cols * 100;
+      b.style.left = cx.toFixed(1) + '%'; b.style.top = cy.toFixed(1) + '%';
+      b.style.transform = 'rotate(' + Math.floor(Math.random() * 80 - 40) + 'deg)';
+      b.setAttribute('aria-label', isT ? 'लक्ष्य ' + lv.target : 'चिह्न');
+      b.dataset.t = isT ? '1' : '0';
+      b.addEventListener('click', function () {
+        if (R.locked || b.disabled) return;
+        b.disabled = true;
+        if (isT) { b.classList.remove('lens'); b.classList.add('found'); found++; info.querySelector('b').textContent = lv.target; info.innerHTML = 'ढूँढने हैं: <b>' + lv.target + '</b> × ' + (lv.n - found); if (found >= lv.n) { R.locked = true; setTimeout(win, 450); } }
+        else { b.classList.add('bad'); oops(); }
+      });
+      btns.push(b); wrap.appendChild(b);
+    });
+    st.appendChild(wrap);
+    R.lensFn = function () {
+      for (var k = 0; k < btns.length; k++) { if (btns[k].dataset.t === '1' && !btns[k].disabled) { btns[k].classList.add('lens'); return; } }
+    };
+  }
+
+  function carSvg(col) {
+    return '<svg viewBox="0 0 74 40"><path d="M4 31V23l10-2 9-10h24l9 10 12 2v8z" fill="' + col + '" stroke="#3B2210" stroke-width="2.6" stroke-linejoin="round"/><path d="M25 21l5-8h15l6 8z" fill="#CDEBFF" stroke="#3B2210" stroke-width="2" stroke-linejoin="round"/><circle cx="19" cy="32" r="6.4" fill="#3A3F52" stroke="#fff" stroke-width="1.6"/><circle cx="55" cy="32" r="6.4" fill="#3A3F52" stroke="#fff" stroke-width="1.6"/></svg>';
+  }
+  function drawRace(lv, st) {
+    var run = R.run, W = document.createElement('div'); W.className = 'race';
+    var pos = [1, 1], cars = [], flags = [], lanes = [], running = false;
+    [['#E5484D', 'तुम'], ['#8E5BE0', '']].forEach(function (c, i) {
+      var wrap = document.createElement('div'); wrap.className = 'lanewrap';
+      if (i === 0) { var y = document.createElement('span'); y.className = 'you'; y.textContent = '▼ ' + c[1]; wrap.appendChild(y); }
+      var lane = document.createElement('div'); lane.className = 'lane'; lane.dataset.i = i;
+      var car = document.createElement('div'); car.className = 'car'; car.innerHTML = carSvg(c[0]);
+      var fl = document.createElement('div'); fl.className = 'flag' + (i === 0 ? ' can' : ''); fl.style.left = 'calc(100% - 24px)';
+      if (i === 0) fl.setAttribute('aria-label', 'फ़िनिश झंडा');
+      lane.appendChild(car); lane.appendChild(fl); wrap.appendChild(lane); W.appendChild(wrap);
+      cars.push(car); flags.push(fl); lanes.push(lane);
+    });
+    function setFlag(f) { pos[0] = f; flags[0].style.left = 'calc((100% - 24px) * ' + f.toFixed(3) + ')'; }
+    var drag = false;
+    flags[0].addEventListener('pointerdown', function (e) { if (running || R.locked) return; drag = true; try { flags[0].setPointerCapture(e.pointerId); } catch (x) { /* chale */ } e.preventDefault(); });
+    flags[0].addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var r = lanes[0].getBoundingClientRect();
+      setFlag(Math.min(1, Math.max(0, (e.clientX - r.left - 12) / (r.width - 24))));
+    });
+    function up() { drag = false; }
+    flags[0].addEventListener('pointerup', up); flags[0].addEventListener('pointercancel', up);
+    var go = document.createElement('button'); go.type = 'button'; go.className = 'gobtn'; go.textContent = 'शुरू';
+    function reset() {
+      cars.forEach(function (c) { c.style.transition = 'none'; c.style.left = '0px'; });
+      running = false; go.disabled = false; flags[0].classList.add('can');
+    }
+    go.addEventListener('click', function () {
+      if (running || R.locked) return;
+      running = true; go.disabled = true; flags[0].classList.remove('can');
+      var lw = lanes[0].clientWidth - 24, d = [Math.max(0, pos[0] * lw - 66), Math.max(0, pos[1] * lw - 66)], v = 0.22;
+      var t = [d[0] / v, d[1] / v];
+      void cars[0].offsetWidth;
+      cars.forEach(function (c, i) { c.style.transition = 'left ' + Math.max(60, t[i]) + 'ms linear'; c.style.left = d[i] + 'px'; });
+      setTimeout(function () {
+        if (run !== R.run) return;
+        if (t[0] < t[1] - 30) { R.locked = true; say('जीत गए! नियम बदलना काम आया।', true); setTimeout(win, 500); }
+        else {
+          say(Math.abs(t[0] - t[1]) < 30 ? 'बराबरी रही! कुछ बदलकर देखो।' : 'दूसरी कार जीत गई!');
+          oops();
+          setTimeout(function () { if (run === R.run) reset(); }, 900);
+        }
+      }, Math.min(t[0], t[1]) + 300);
+    });
+    W.appendChild(go);
+    st.appendChild(W);
+    R.lensFn = function () { flags[0].style.outline = '3px solid #FF8A00'; };
+  }
+
+  /* ================= v7: awaaz, khel-khel ma nava prakar ================= */
+  window.__dd = R;
+  var AC = null;
+  function snd(kind) {
+    if (!S.sound) return;
+    try {
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+      var seqs = { tap: [[620, .05]], ok: [[523, .08], [784, .12]], bad: [[190, .2]], pop: [[880, .05], [1175, .04]], win: [[523, .1], [659, .1], [784, .1], [1047, .3]] };
+      var t = AC.currentTime;
+      seqs[kind].forEach(function (n) {
+        var o = AC.createOscillator(), g = AC.createGain();
+        o.type = kind === 'bad' ? 'sawtooth' : 'sine'; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.11, t); g.gain.exponentialRampToValueAtTime(0.001, t + n[1]);
+        o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + n[1] + 0.02); t += n[1] * 0.9;
+      });
+    } catch (e) { /* awaaz na chale to khel chale */ }
+  }
+  function buzz(ms) { try { if (S.sound && navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* chale */ } }
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('button')) snd('tap'); }, true);
+  function setSoundBtn() { $('sSound').textContent = S.sound ? 'आवाज़: चालू' : 'आवाज़: बंद'; }
+  $('sSound').addEventListener('click', function () { S.sound = !S.sound; save(); setSoundBtn(); snd('ok'); });
+  setSoundBtn();
+  (function bubbles() {
+    var sk = $('sky');
+    for (var i = 0; i < 9; i++) {
+      var b = document.createElement('span'); b.className = 'bub';
+      b.style.setProperty('--x', (Math.random() * 100).toFixed(0) + '%');
+      b.style.setProperty('--s', (14 + Math.random() * 30).toFixed(0) + 'px');
+      b.style.setProperty('--d', (9 + Math.random() * 10).toFixed(1) + 's');
+      b.style.setProperty('--w', (-Math.random() * 12).toFixed(1) + 's');
+      sk.appendChild(b);
+    }
+  })();
+  var QUIPS = ['हू-हू! गुदगुदी हो रही है!', 'चलो, एक पहेली खेलें?', 'मैं रोज़ 10 किताबें पढ़ता हूँ!', 'तुम तो बहुत तेज़ हो!', 'आज कितने सितारे जीतोगे?', 'उल्लू रात में जागते हैं, तुम सो जाना!'];
+  document.querySelector('.portrait').addEventListener('click', function () {
+    var p = this; p.classList.remove('jump'); void p.offsetWidth; p.classList.add('jump');
+    toast(pick(QUIPS)); snd('ok');
+  });
+
+  var COLS = { dr: '#E5484D', db: '#3E8EDE', dg: '#58B947', dy: '#FFC83D', dp: '#8E5BE0', dor: '#FF8A3D', dt: '#2EC4B6', dk: '#EE5B7A' };
+  var COLN = ['dr', 'db', 'dg', 'dy', 'dp', 'dor', 'dt', 'dk'];
+  function lensOn(el) { if (el) el.classList.add('lens'); }
+
+  /* ---- tapnum: sankhya kram ma chhuo ---- */
+  function drawTapnum(lv, st) {
+    var items = lv.items ? lv.items.map(function (x) { return { t: x.t, v: x.v }; }) : [], i;
+    if (!items.length) { for (i = 1; i <= lv.n; i++) items.push({ t: String(i), v: i }); }
+    var cols = 4, rows = Math.ceil(items.length / cols) + 1, cells = [];
+    for (i = 0; i < cols * rows; i++) cells.push(i);
+    shuffle(cells);
+    var order = items.slice().sort(function (a, b) { return lv.desc ? b.v - a.v : a.v - b.v; });
+    var next = 0, btns = [];
+    var info = document.createElement('p'); info.className = 'sumline';
+    function upd() { info.innerHTML = 'अगला: <b>' + (next < order.length ? '?' : '✓') + '</b> &nbsp; ' + next + '/' + order.length; }
+    upd(); st.appendChild(info);
+    var f = document.createElement('div'); f.className = 'numfield'; f.style.setProperty('--rows', rows);
+    items.forEach(function (it, k) {
+      var c = cells[k], b = document.createElement('button'); b.type = 'button'; b.className = 'bn' + (it.t.length > 3 ? ' small' : '');
+      b.textContent = it.t; b.dataset.v = it.v; b.setAttribute('aria-label', it.t);
+      b.style.left = (((c % cols) + 0.5 + (Math.random() - 0.5) * 0.35) / cols * 100).toFixed(1) + '%';
+      b.style.top = ((Math.floor(c / cols) + 0.5 + (Math.random() - 0.5) * 0.35) / rows * 100).toFixed(1) + '%';
+      b.style.setProperty('--c', COLS[COLN[k % COLN.length]]);
+      b.style.animationDelay = (-Math.random() * 2).toFixed(2) + 's';
+      b.addEventListener('click', function () {
+        if (R.locked || b.classList.contains('gone')) return;
+        if (it === order[next]) {
+          b.classList.remove('lens'); b.classList.add('gone'); next++; snd('pop'); upd();
+          if (next === 3 || next === Math.ceil(order.length / 2)) say(pick(['शाबाश!', 'बहुत बढ़िया!', 'ऐसे ही चलो!']), true);
+          if (next >= order.length) { R.locked = true; setTimeout(win, 450); }
+        } else { shakeEl(b); oops(); }
+      });
+      btns.push(b); f.appendChild(b);
+    });
+    st.appendChild(f);
+    R.lensFn = function () { btns.forEach(function (b) { b.classList.remove('lens'); }); lensOn(btns[items.indexOf(order[next])]); };
+  }
+
+  /* ---- pop: bulbule fodo ---- */
+  function drawPop(lv, st) {
+    var total = 25, cells = [], i, t = [];
+    for (i = 0; i < total; i++) cells.push(i);
+    shuffle(cells);
+    var tset = {}; cells.slice(0, lv.n).forEach(function (c) { tset[c] = 1; });
+    var left = lv.n, btns = [];
+    var info = document.createElement('p'); info.className = 'sumline';
+    function upd() { info.innerHTML = 'बाकी: <b>' + left + '</b>'; } upd(); st.appendChild(info);
+    var g = document.createElement('div'); g.className = 'bubs';
+    var others = COLN.filter(function (c) { return c !== lv.color; });
+    for (i = 0; i < total; i++) {
+      (function (i) {
+        var isT = !!tset[i], col;
+        // lakshya: rang (inverse = e rang na hoy te)
+        if (lv.inverse) { col = isT ? pick(others) : lv.color; } else { col = isT ? lv.color : pick(others); }
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'bb'; b.dataset.t = isT ? '1' : '0';
+        b.style.setProperty('--c', COLS[col]); b.setAttribute('aria-label', 'बुलबुला ' + (i + 1));
+        b.addEventListener('click', function () {
+          if (R.locked || b.classList.contains('gone')) return;
+          if (isT) { b.classList.remove('lens'); b.classList.add('gone'); left--; snd('pop'); upd(); if (left <= 0) { R.locked = true; setTimeout(win, 450); } }
+          else { b.classList.remove('bad'); void b.offsetWidth; b.classList.add('bad'); oops(); }
+        });
+        btns.push(b); g.appendChild(b);
+      })(i);
+    }
+    st.appendChild(g);
+    R.lensFn = function () { for (var k = 0; k < btns.length; k++) { if (btns[k].dataset.t === '1' && !btns[k].classList.contains('gone')) { lensOn(btns[k]); return; } } };
+  }
+
+  /* ---- sort: rang ni nali ---- */
+  function drawSort(lv, st) {
+    var cap = lv.cap || 4, k = lv.k, nt = k + 2, tubes, sol, tries = 0, i;
+    function top(t) { return t.length ? t[t.length - 1] : -1; }
+    function mixed(ts) { return ts.some(function (t) { return t.length && !t.every(function (u) { return u === t[0]; }); }); }
+    do {
+      tubes = []; for (i = 0; i < nt; i++) { tubes.push(i < k ? new Array(cap).fill(i) : []); }
+      var rev = [], n = 0;
+      while (rev.length < lv.steps && n++ < 600) {
+        var D = Math.floor(Math.random() * nt), S2 = Math.floor(Math.random() * nt);
+        if (D === S2 || !tubes[D].length || tubes[S2].length >= cap) continue;
+        var c = top(tubes[D]);
+        if (tubes[D].length > 1 && tubes[D][tubes[D].length - 2] !== c) continue;
+        tubes[D].pop(); tubes[S2].push(c); rev.push([S2, D]);
+      }
+      sol = rev.reverse();
+    } while (!mixed(tubes) && tries++ < 40);
+    R.sol = sol;
+    var sel = -1, els = [], wrap = document.createElement('div'); wrap.className = 'tubes';
+    var info = document.createElement('p'); info.className = 'sumline'; info.innerHTML = 'हर नली में <b>एक ही रंग</b>'; st.appendChild(info);
+    function solved() { return tubes.every(function (t) { return !t.length || (t.length === cap && t.every(function (u) { return u === t[0]; })); }); }
+    function draw(dropIdx) {
+      tubes.forEach(function (t, ti) {
+        var el = els[ti]; el.textContent = '';
+        t.forEach(function (u, ui) {
+          var d = document.createElement('i'); d.className = 'u'; d.style.setProperty('--c', COLS[COLN[u]]);
+          if (ti === dropIdx && ui === t.length - 1) d.classList.add('drop');
+          el.appendChild(d);
+        });
+        el.classList.toggle('sel', ti === sel);
+        el.classList.toggle('done', t.length === cap && t.every(function (u) { return u === t[0]; }));
+      });
+    }
+    tubes.forEach(function (t, ti) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'tube'; b.dataset.k = ti; b.setAttribute('aria-label', 'नली ' + (ti + 1));
+      b.addEventListener('click', function () {
+        if (R.locked) return;
+        if (sel < 0) { if (tubes[ti].length) { sel = ti; draw(); } return; }
+        if (sel === ti) { sel = -1; draw(); return; }
+        var from = tubes[sel], to = tubes[ti];
+        if (to.length < cap && (!to.length || top(to) === top(from))) {
+          var wasDone = to.length + 1 === cap;
+          to.push(from.pop()); sel = -1; snd('pop'); draw(ti);
+          if (solved()) { R.locked = true; setTimeout(win, 500); }
+          else if (wasDone && to.every(function (u) { return u === to[0]; })) say(pick(['एक नली पूरी!', 'वाह, रंग मिल गया!']), true);
+        } else { shakeEl(b); say('यह चाल नहीं हो सकती। ऊपर का रंग मिलना चाहिए।'); sel = -1; draw(); }
+      });
+      els.push(b); wrap.appendChild(b);
+    });
+    draw(); st.appendChild(wrap);
+    R.lensFn = function () {
+      // agli sachi chaal: sol ni pehli chaal sudhi ni jagya batave nahi - saral sanket
+      toast('खाली नली और एक रंग वाली नलियों का फ़ायदा उठाओ।');
+    };
+  }
+
+  /* ---- lights: batti bujhao ---- */
+  function drawLights(lv, st) {
+    var n = lv.n, on = [], i, j, presses;
+    function press(a, p) { var r = Math.floor(p / n), c = p % n; [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) { var rr = r + d[0], cc = c + d[1]; if (rr >= 0 && rr < n && cc >= 0 && cc < n) a[rr * n + cc] = !a[rr * n + cc]; }); }
+    do {
+      on = []; for (i = 0; i < n * n; i++) on.push(false);
+      presses = []; for (i = 0; i < n * n; i++) { if (Math.random() < 0.5) presses.push(i); }
+      presses.forEach(function (p) { press(on, p); });
+    } while (presses.length < 3 || !on.some(Boolean) || on.filter(Boolean).length < 2);
+    R.sol = presses;
+    var g = document.createElement('div'); g.className = 'lights'; g.style.gridTemplateColumns = 'repeat(' + n + ', minmax(0, 1fr))';
+    var cells = [];
+    function draw() { cells.forEach(function (b, k) { b.classList.toggle('on', on[k]); }); }
+    for (i = 0; i < n * n; i++) {
+      (function (i) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'lt'; b.dataset.k = i; b.setAttribute('aria-label', 'बत्ती ' + (i + 1));
+        b.addEventListener('click', function () {
+          if (R.locked) return;
+          press(on, i); draw(); snd('pop');
+          if (!on.some(Boolean)) { R.locked = true; setTimeout(win, 500); }
+        });
+        cells.push(b); g.appendChild(b);
+      })(i);
+    }
+    draw(); st.appendChild(g);
+    R.lensFn = function () {
+      var want = {}; presses.forEach(function (p) { want[p] = 1; });
+      for (var k = 0; k < cells.length; k++) { cells[k].classList.remove('lens'); }
+      // ek aavashyak batti (ghni vaar chaal ma ek vadhu aave to pan chale)
+      var cur = on.slice(), pos = -1;
+      for (var q = 0; q < cells.length && pos < 0; q++) { if (want[q]) { pos = q; } }
+      lensOn(cells[Math.max(0, pos)]);
+    };
+  }
+
+  /* ---- slide: tile khisakao ---- */
+  function drawSlide(lv, st) {
+    var r = lv.r, c = lv.c, N = r * c, b = [], i, blank, path, tries = 0;
+    do {
+      b = []; for (i = 0; i < N - 1; i++) b.push(i + 1); b.push(0);
+      blank = N - 1; path = [blank]; var prev = -1;
+      for (i = 0; i < lv.steps; i++) {
+        var opts = [], rr = Math.floor(blank / c), cc = blank % c;
+        if (rr > 0) opts.push(blank - c); if (rr < r - 1) opts.push(blank + c); if (cc > 0) opts.push(blank - 1); if (cc < c - 1) opts.push(blank + 1);
+        opts = opts.filter(function (o) { return o !== prev; });
+        var m = pick(opts); b[blank] = b[m]; b[m] = 0; prev = blank; blank = m; path.push(blank);
+      }
+    } while (b.every(function (v, k) { return v === (k < N - 1 ? k + 1 : 0); }) && tries++ < 20);
+    R.sol = path.slice(0, -1).reverse();
+    var g = document.createElement('div'); g.className = 'slide'; g.style.gridTemplateColumns = 'repeat(' + c + ', minmax(0, 1fr))';
+    var cells = [];
+    function isDone() { return b.every(function (v, k) { return v === (k < N - 1 ? k + 1 : 0); }); }
+    function draw() {
+      cells.forEach(function (el, k) {
+        el.textContent = b[k] ? String(b[k]) : '';
+        el.classList.toggle('blank', !b[k]);
+        el.classList.toggle('ok', b[k] === k + 1);
+      });
+    }
+    for (i = 0; i < N; i++) {
+      (function (i) {
+        var el = document.createElement('button'); el.type = 'button'; el.className = 'sl'; el.dataset.p = i; el.setAttribute('aria-label', 'टाइल ' + (i + 1));
+        el.addEventListener('click', function () {
+          if (R.locked || !b[i]) return;
+          var z = b.indexOf(0), zr = Math.floor(z / c), zc = z % c, ir = Math.floor(i / c), ic = i % c;
+          if (Math.abs(zr - ir) + Math.abs(zc - ic) !== 1) { shakeEl(el); return; }
+          b[z] = b[i]; b[i] = 0; snd('pop'); draw();
+          if (isDone()) { R.locked = true; setTimeout(win, 500); }
+        });
+        cells.push(el); g.appendChild(el);
+      })(i);
+    }
+    draw(); st.appendChild(g);
+    R.lensFn = function () { toast('पहले ऊपर की पंक्ति ठीक करो, फिर आगे बढ़ो।'); };
+  }
+
+  load();
+  S.cur = nextTarget();
+  showHome();
+})();
+</script>
+
+</body>
+</html>
